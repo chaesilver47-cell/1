@@ -10,8 +10,8 @@
 | 0 | 기획서 읽고 정해진 것 / 안 정해진 것 구분 | 질문 목록 → 팀 결정 | ✅ |
 | 1 | **사용자 여정 분석** (지금 vs 원소스 쓸 때, 클릭 단위로) | [01_user_journey.md](./01_user_journey.md) | ✅ |
 | 2 | 기능 명세 + 정보 구조(IA) + 화면 흐름 | [02_screen_flow.md](./02_screen_flow.md) | ✅ |
-| 3 | 와이어프레임 (화면별 뼈대) | [03_wireframe.md](./03_wireframe.md) + [wireframe/index.html](./wireframe/index.html) | ✅ 리뷰 대기 |
-| 4 | 프로토타입 제작 (진짜 Claude 연결) | prototype/index.html + 아티팩트 링크 | ⏳ |
+| 3 | 와이어프레임 (화면별 뼈대) | [03_wireframe.md](./03_wireframe.md) + [wireframe/index.html](./wireframe/index.html) | ✅ |
+| 4 | 프로토타입 제작 (진짜 Claude 연결) | [04_prototype.md](./04_prototype.md) + [prototype/index.html](./prototype/index.html) + [아티팩트](https://claude.ai/artifact/JKUtkZGoabDuFt1qcLYJHW) | ✅ 리뷰 대기 |
 | 5 | 직접 써보고 결과물 품질 다듬기 (프롬프트·검사 규칙 개선) | 05_tuning.md | ⏳ |
 
 ## 0단계에서 확정한 것

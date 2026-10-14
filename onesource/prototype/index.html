@@ -1,0 +1,805 @@
+<title>원소스 OneSource</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 레이아웃: 입력은 한 칼럼 원고지, 결과는 '원문(형광펜) | 직무별 카드 2열' 작업대 */
+:root{
+  --bg:#f7f8fa; --surface:#ffffff; --ink:#1c2228; --sub:#5d6873; --faint:#8a949e;
+  --line:#e2e6ea; --line-strong:#c9d0d6;
+  --accent:#2f54c8; --accent-soft:#e9eefc; --on-accent:#ffffff;
+  --hl:#fff0a3; --hl-strong:#ffd84d;
+  --warn:#c4420c; --warn-soft:#fdf0e9; --ok:#2a7a3b; --ok-soft:#eaf5ec;
+  --shadow:0 1px 2px rgba(20,30,40,.06),0 4px 16px rgba(20,30,40,.05);
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171b; --surface:#1d2126; --ink:#e7eaee; --sub:#a3adb7; --faint:#7c8691;
+    --line:#2d333a; --line-strong:#414952;
+    --accent:#7d9bf5; --accent-soft:#232c45; --on-accent:#0f1420;
+    --hl:#5b4d12; --hl-strong:#806a10;
+    --warn:#ff8a5b; --warn-soft:#3a2219; --ok:#6fcf86; --ok-soft:#1b2e21;
+    --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171b; --surface:#1d2126; --ink:#e7eaee; --sub:#a3adb7; --faint:#7c8691;
+  --line:#2d333a; --line-strong:#414952;
+  --accent:#7d9bf5; --accent-soft:#232c45; --on-accent:#0f1420;
+  --hl:#5b4d12; --hl-strong:#806a10;
+  --warn:#ff8a5b; --warn-soft:#3a2219; --ok:#6fcf86; --ok-soft:#1b2e21;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1180px;margin:0 auto}
+.narrow{max-width:760px;margin:0 auto}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand b{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.brand span{color:var(--sub);font-size:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:7px 12px;font-size:14px;line-height:1.3;white-space:nowrap}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.primary:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--sub)}
+.btn.quiet:hover{color:var(--ink);border-color:var(--line)}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn.lg{padding:11px 20px;font-size:15px}
+.count{font-family:var(--f-mono);font-size:12px;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:0 7px}
+
+/* input screen */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.sec-h h2{margin:0;font-size:16px;font-weight:600}
+.sec-h h2 small{font-weight:400;color:var(--sub);font-size:13px;margin-left:6px}
+.seg-toggle{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.seg-toggle button{border:0;background:transparent;padding:5px 11px;font-size:13px;color:var(--sub)}
+.seg-toggle button.on{background:var(--ink);color:var(--surface)}
+.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+@media (max-width:620px){.grid3{grid-template-columns:1fr 1fr}.grid3 .f-name{grid-column:1/-1}}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;color:var(--sub);font-weight:500}
+.field label em{font-style:normal;color:var(--warn)}
+.field label small{font-weight:400;color:var(--faint)}
+.field input,.field textarea{width:100%;border:1px solid var(--line-strong);border-radius:8px;padding:9px 11px;background:var(--surface);font-size:15px;resize:vertical}
+.field input::placeholder,.field textarea::placeholder{color:var(--faint)}
+.field input:focus,.field textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+details.more{border-top:1px dashed var(--line);padding-top:10px}
+details.more summary{cursor:pointer;color:var(--sub);font-size:14px;list-style:none}
+details.more summary::before{content:"＋ "}
+details.more[open] summary::before{content:"－ "}
+details.more>div{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+.gauge-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--sub)}
+.gauge{display:flex;gap:3px}
+.gauge i{width:34px;height:7px;border-radius:2px;background:var(--line)}
+.gauge.l1 i:nth-child(1){background:var(--warn)}
+.gauge.l2 i:nth-child(-n+2){background:var(--hl-strong)}
+.gauge.l3 i{background:var(--ok)}
+.privacy{font-size:13px;color:var(--faint)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:1px solid var(--line-strong);background:var(--surface);border-radius:10px;padding:8px 12px;min-width:150px;flex:1 1 150px;max-width:220px}
+.chip b{font-size:14px;font-weight:600}
+.chip small{font-size:12px;color:var(--sub);line-height:1.4}
+.chip.on{border-color:var(--accent);background:var(--accent-soft)}
+.chip.on b::before{content:"✓ ";color:var(--accent)}
+.chip.add{border-style:dashed}
+.custom-row{display:flex;gap:8px;margin-top:8px}
+.custom-row input{flex:1;min-width:0;border:1px solid var(--line-strong);border-radius:8px;padding:7px 10px;background:var(--surface)}
+.cta-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cta-row .hint{font-size:14px;color:var(--sub)}
+.notice{border:1px solid var(--line-strong);background:var(--surface);border-radius:var(--r);padding:12px 14px;font-size:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.notice.warn{border-color:var(--warn);background:var(--warn-soft)}
+.notice.info{border-color:var(--accent);background:var(--accent-soft)}
+
+/* loading overlay */
+.overlay{position:fixed;inset:0;background:rgba(20,25,30,.42);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
+.overlay .box{background:var(--surface);border-radius:12px;padding:22px;width:min(400px,100%);box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.overlay h3{margin:0 0 10px;font-size:16px}
+.steps{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps li{font-size:14px;color:var(--faint);display:flex;gap:8px;align-items:center}
+.steps li::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line-strong);flex:none}
+.steps li.done{color:var(--ink)}
+.steps li.done::before{background:var(--ok);border-color:var(--ok)}
+.steps li.now{color:var(--ink);font-weight:600}
+.steps li.now::before{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.steps li.now::before{animation:none;background:var(--accent)}}
+
+/* result workbench */
+.rbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-block:4px 14px}
+.rbar .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.rbar h1{margin:0;font-size:18px;font-weight:700;text-wrap:balance}
+.rbar .right{display:flex;gap:6px;flex-wrap:wrap}
+.work{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.work{grid-template-columns:1fr}}
+.src{position:sticky;top:max(12px,env(safe-area-inset-top,0px));background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;max-height:calc(100vh - 24px);overflow:auto}
+@media (max-width:860px){.src{position:static;max-height:none}}
+.src h3{margin:0 0 2px;font-size:14px}
+.src .sub{font-size:12px;color:var(--faint);margin:0 0 10px}
+.fact{display:flex;gap:8px;padding:5px 7px;border-radius:5px;font-size:14px;line-height:1.45;transition:background .12s}
+.fact .fid{font-family:var(--f-mono);font-size:11px;color:var(--faint);padding-top:2px;flex:none;width:30px;white-space:nowrap}
+.fact.lit{background:var(--hl)}
+.fact.strong{background:var(--hl-strong);font-weight:600}
+.fact.unv{color:var(--warn)}
+.fact.unv .fid::after{content:" ?"}
+.src details{margin-top:10px;font-size:13px;color:var(--sub)}
+.src details pre{white-space:pre-wrap;font:13px/1.5 var(--f-body);color:var(--ink);background:var(--bg);border-radius:6px;padding:8px;margin:6px 0 0}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.cards.one{grid-template-columns:minmax(0,1fr)}
+@media (max-width:1040px){.cards{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;box-shadow:var(--shadow)}
+.card:hover{border-color:var(--line-strong)}
+.card.has-warn{border-color:var(--warn)}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card-h h4{margin:0;font-size:14px;font-weight:600;color:var(--sub)}
+.len{font-family:var(--f-mono);font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.len.over{color:var(--warn);font-weight:600}
+.sentence{font-size:17px;font-weight:600;line-height:1.55;letter-spacing:-.005em;margin:0;cursor:text;border-radius:6px;padding:2px 4px;margin-inline:-4px}
+.sentence:hover{background:var(--bg)}
+.sentence .sg{border-radius:3px;transition:background .12s}
+.sentence .sg:hover{background:var(--hl-strong)}
+.bad{text-decoration:underline wavy var(--warn);text-decoration-thickness:1.5px;text-underline-offset:4px}
+.editor{width:100%;border:1.5px solid var(--accent);border-radius:8px;padding:8px 10px;font-size:16px;font-weight:600;line-height:1.55;background:var(--surface);resize:vertical;min-height:84px}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{font-size:12px;border:1px solid var(--line-strong);border-radius:999px;padding:1px 8px;color:var(--sub)}
+.why{font-size:13px;background:var(--bg);border-radius:8px;padding:7px 10px;color:var(--ink)}
+.why b{font-weight:600}
+.check{font-size:13px;display:flex;align-items:center;gap:6px}
+.check.ok{color:var(--ok)}
+.check.bad-c{color:var(--warn);font-weight:600}
+.warns{display:flex;flex-direction:column;gap:6px;border:1px solid var(--warn);background:var(--warn-soft);border-radius:8px;padding:9px 11px;font-size:13px}
+.warns p{margin:0}
+.warns p b{font-weight:600}
+.warns .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.card-f{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px}
+.card-f .acts{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.copied{font-size:12px;color:var(--ok)}
+.card.busy{opacity:.55;pointer-events:none}
+.card.busy .sentence::after{content:" · 다시 만드는 중…";font-weight:400;font-size:13px;color:var(--sub)}
+.addcard{border:1.5px dashed var(--line-strong);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:150px;padding:14px;color:var(--sub);background:transparent}
+.addcard .chips{justify-content:center}
+.addcard .chip{min-width:0;flex:0 1 auto;padding:5px 10px}
+.mtabs{display:none}
+@media (max-width:640px){
+  .mtabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .mtabs button{border:0;background:transparent;padding:8px 10px;font-size:14px;color:var(--sub);border-bottom:2px solid transparent;white-space:nowrap}
+  .mtabs button.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+  .cards .card:not(.m-on){display:none}
+  .cards .addcard{display:none}
+}
+.banner{margin-bottom:12px}
+.demo-badge{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 9px}
+
+/* drawer */
+.drawer-bg{position:fixed;inset:0;background:rgba(20,25,30,.3);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,92vw);background:var(--surface);border-left:1px solid var(--line);z-index:21;padding:18px;padding-right:max(18px,env(safe-area-inset-right,0px));padding-top:max(18px,env(safe-area-inset-top,0px));overflow:auto;display:flex;flex-direction:column;gap:12px}
+.drawer h3{margin:0;font-size:16px}
+.item{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.item:hover{border-color:var(--line-strong)}
+.item-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.item-h button.open{border:0;background:transparent;padding:0;text-align:left;font-weight:600;font-size:15px}
+.item-h button.open:hover{color:var(--accent)}
+.item .meta{font-size:12px;color:var(--faint)}
+.item .tag.cp{border-color:var(--ok);color:var(--ok)}
+.empty{color:var(--sub);font-size:14px;border:1px dashed var(--line-strong);border-radius:var(--r);padding:16px;text-align:center}
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:999px;font-size:14px;z-index:40}
+.foot{margin-top:28px;font-size:12px;color:var(--faint);text-align:center}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><b>원소스</b><span>경험 1개 → 직무별 이력서 1~2줄</span></div>
+    <button class="btn" id="open-archive" type="button">보관함 <span class="count" id="archive-count">0</span></button>
+  </header>
+  <main id="app"></main>
+  <p class="foot">입력한 경험과 결과는 이 브라우저에만 저장돼요 · 문장은 AI가 쓴 초안이에요. 원문과 대조한 뒤 쓰세요.</p>
+</div>
+<div id="layer"></div>
+
+<script>
+/* ───────────── 0. 기본 데이터 ───────────── */
+const JOBS = {
+  "마케팅": {desc:"대상자 반응·콘텐츠 성과를 봐요", focus:"콘텐츠 기획·제작 건수, 반응·참여·도달 같은 대상자 반응 수치, 타깃 설정", terms:"참여율, 도달, 타깃, 콘텐츠, 캠페인"},
+  "서비스기획·PM": {desc:"문제 정의·일정·협업 조율을 봐요", focus:"문제 발견에서 해결까지의 과정, 일정 준수, 이해관계자 조율, 개선 결과", terms:"일정 관리, 이해관계자, 요구사항, 개선"},
+  "영업관리": {desc:"관계 구축·숫자로 된 성과를 봐요", focus:"섭외·협상 건수, 예산·매출·계약 성과, 외부 관계자 관리", terms:"섭외, 협상, 거래처, 예산 확보, 목표 달성"},
+  "인사": {desc:"사람 사이 조율·구성원 이해를 봐요", focus:"팀 구성과 역할 분배, 갈등 조율, 구성원 의견 수렴, 조직 운영", terms:"조율, 소통, 구성원, 운영, 온보딩"}
+};
+const FIELDS = [
+  {k:"name", label:"활동명", req:true, ph:"예) 교내 마케팅 공모전"},
+  {k:"role", label:"내 역할", req:true, ph:"예) 팀장"},
+  {k:"period", label:"기간", ph:"예) 2024.03 ~ 2024.05"},
+  {k:"did", label:"한 일", req:true, multi:true, ph:"한 줄에 하나씩 써주세요\n예) SNS 콘텐츠 20건 기획·제작\n예) 학교 행정 부서와 일정 조율", hint:"한 줄에 하나씩 쓰면 AI가 직무별로 골라 쓰기 쉬워요"},
+  {k:"result", label:"성과", multi:true, ph:"예) 팔로워 참여율 15% 증가", hint:"숫자가 있으면 꼭 써주세요"},
+  {k:"tools", label:"사용 툴", more:true, ph:"예) 인스타그램, 캔바"},
+  {k:"problem", label:"문제 해결 과정", more:true, multi:true, ph:"예) 협찬 거절이 이어져 제안서를 다시 써서 섭외에 성공"}
+];
+const EXAMPLE = {
+  mode:"fields", name:"교내 마케팅 공모전", role:"팀장", period:"2024.03 ~ 2024.05",
+  did:"5인 팀 구성 및 역할 분배\nSNS 홍보 캠페인 기획·운영\nSNS 콘텐츠 20건 기획·제작\n학교 행정 부서와 일정·장소 조율\n협찬처 10곳 직접 섭외",
+  result:"팔로워 참여율 15% 증가\n3주 캠페인 일정 준수 완료\n캠페인 예산 확보",
+  tools:"인스타그램, 캔바", problem:"", raw:""
+};
+const EXAMPLE_RESULT = {
+  facts:[
+    {id:"F1",quote:"5인 팀 구성 및 역할 분배"},{id:"F2",quote:"SNS 홍보 캠페인 기획·운영"},
+    {id:"F3",quote:"SNS 콘텐츠 20건 기획·제작"},{id:"F4",quote:"학교 행정 부서와 일정·장소 조율"},
+    {id:"F5",quote:"협찬처 10곳 직접 섭외"},{id:"F6",quote:"팔로워 참여율 15% 증가"},
+    {id:"F7",quote:"3주 캠페인 일정 준수 완료"},{id:"F8",quote:"캠페인 예산 확보"}
+  ],
+  results:[
+    {job:"마케팅",segments:[{text:"SNS 콘텐츠 20건을 기획·제작해 ",facts:["F3"]},{text:"팔로워 참여율 15% 증가 달성",facts:["F6"]}],
+     reason:"마케팅은 대상자 반응을 보기 때문에 콘텐츠 건수와 참여율을 앞에 뒀어요",tags:["콘텐츠 20건","참여율 15%"]},
+    {job:"서비스기획·PM",segments:[{text:"5인 팀 역할 분배와 ",facts:["F1"]},{text:"학교 행정 부서 일정 조율로 ",facts:["F4"]},{text:"3주 캠페인 일정 준수 완료",facts:["F7"]}],
+     reason:"기획은 일정과 협업 조율을 보기 때문에 성과 수치보다 진행 과정을 앞에 뒀어요",tags:["역할 분배","행정 조율","3주 일정"]},
+    {job:"영업관리",segments:[{text:"협찬처 10곳을 직접 섭외해 ",facts:["F5"]},{text:"캠페인 예산 확보",facts:["F8"]}],
+     reason:"영업관리는 외부 관계와 숫자 성과를 보기 때문에 섭외 건수와 예산 확보를 앞에 뒀어요",tags:["협찬 10곳","예산 확보"]}
+  ]
+};
+
+/* ───────────── 1. 저장 (브라우저에만) ───────────── */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem("onesource."+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem("onesource."+k, JSON.stringify(v)); }catch(e){} }
+};
+const blankDraft = () => ({mode:"fields",name:"",role:"",period:"",did:"",result:"",tools:"",problem:"",raw:"",jobs:[],custom:"",jd:{},limit:80,editingId:null});
+const firstVisit = store.get("draft", null) === null && store.get("archive", []).length === 0;
+let state = {
+  view: "input",
+  draft: store.get("draft", null) || Object.assign(blankDraft(), firstVisit ? {...EXAMPLE, jobs:["마케팅","서비스기획·PM","영업관리"], isExample:true} : {}),
+  archive: store.get("archive", []),
+  currentId: null,
+  error: null,
+  mTab: 0,
+  addOpen: false,
+  confirmDelete: null,
+  editing: {}
+};
+const saveDraft = () => store.set("draft", state.draft);
+const saveArchive = () => { store.set("archive", state.archive); updateCount(); };
+
+/* ───────────── 2. AI 연결 (claude.ai 아티팩트의 sample) ───────────── */
+let sampleFn; // undefined = 확인 중, null = 사용 불가
+const samplePromise = (window.claude && typeof window.claude.use === "function")
+  ? window.claude.use("sample").then(s => (sampleFn = s || null), () => (sampleFn = null))
+  : Promise.resolve(sampleFn = null);
+samplePromise.then(() => { if (state.view === "input") render(); });
+
+function sourceText(d){
+  if (d.mode === "raw") return `활동명: ${d.name || "(없음)"}\n내 역할: ${d.role || "(없음)"}\n기간: ${d.period || "(없음)"}\n내용:\n${d.raw}`;
+  const out = [];
+  FIELDS.forEach(f => { const v = (d[f.k] || "").trim(); if (v) out.push(f.multi ? `${f.label}:\n${v}` : `${f.label}: ${v}`); });
+  return out.join("\n");
+}
+function jobBlock(jobs, jd){
+  return jobs.map((j, i) => {
+    const info = JOBS[j];
+    let s = info ? `${i+1}. ${j}\n   - 이 직무가 보는 것: ${info.desc.replace("를 봐요","")}\n   - 앞세울 사실: ${info.focus}\n   - 자주 쓰는 용어: ${info.terms}`
+                 : `${i+1}. ${j}\n   - 이 직무가 중요하게 보는 역량을 네가 판단해서 그에 맞는 사실을 앞세워.`;
+    if (jd && jd[j] && jd[j].trim()) s += `\n   - 채용공고(이 키워드를 우선 반영): ${jd[j].trim().slice(0, 1500)}`;
+    return s;
+  }).join("\n");
+}
+const RULES = (limit) => `[문장 규칙]
+- 직무마다 문장은 1개. 1~2줄, 공백 포함 ${limit}자 이하.
+- 이력서 문체: 주어 없이 쓰고 '~함', '~달성', '~완료', '~확보' 같은 말이나 명사형으로 끝내. '저는', '~했습니다', 자기소개서 말투 금지.
+- 원문에 없는 숫자·성과·고유명사를 절대 만들지 마. 원문 숫자는 바꾸지 말고 그대로 써.
+- 역할 표현은 원문 수준을 지켜. 원문이 '참여'면 '주도/총괄/리드'로 부풀리지 마.
+- 직무마다 앞세우는 사실이 달라야 해. 같은 사실을 쓰더라도 순서와 용어를 그 직무에 맞게 바꿔.
+- 재료가 부족하면 지어내지 말고 있는 사실만으로 짧게 써.`;
+
+const OUTPUT_SPEC = `- segments를 순서대로 이어 붙이면 완성 문장이 돼야 해. segment마다 근거가 된 사실 id를 facts에 넣어 (조사·연결어만 있는 짧은 segment는 facts: []).
+- reason: "○○ 직무는 ~를 보기 때문에 ~를 앞에 뒀어요" 형식의 한 문장, 50자 이내.
+- tags: 앞세운 사실을 2~7자 짧은 꼬리표로, 최대 3개.
+- job은 위 [지원 직무]에 적힌 이름을 글자 그대로.`;
+
+function generatePrompt(d, jobs){
+  return `너는 인문계열 취업준비생의 이력서 '경력·대내외활동' 칸을 지원 직무별로 다시 쓰는 편집자야.
+
+[원문]
+${sourceText(d)}
+
+[지원 직무]
+${jobBlock(jobs, d.jd)}
+
+[할 일]
+1) 원문을 '사실' 단위로 쪼개. 사실 하나 = 한 가지 행동이나 성과. 각 사실의 quote는 원문에 있는 연속된 문구를 글자 그대로 복사해 (요약·바꿔 쓰기 금지). id는 F1, F2, … 순서대로.
+2) 직무마다 그 직무가 중요하게 보는 사실을 2~3개 골라 앞세울 순서를 정해.
+3) 고른 사실로 이력서 문장을 써.
+
+${RULES(d.limit || 80)}
+
+[출력] 아래 모양의 JSON 하나만 답해.
+{"facts":[{"id":"F1","quote":"원문 그대로"}],"results":[{"job":"직무명","segments":[{"text":"문장 조각","facts":["F1"]}],"reason":"…","tags":["…"]}]}
+${OUTPUT_SPEC}`;
+}
+function regenPrompt(exp, jobs, avoid){
+  const facts = exp.facts.map(f => `${f.id}: ${f.quote}`).join("\n");
+  const others = exp.order.filter(j => !jobs.includes(j)).map(j => `- ${j}: ${cardText(exp.results[j])}`).join("\n");
+  const avoidTxt = avoid && avoid.length ? `\n[직전 문장에서 걸린 문제 — 반복하지 마]\n${avoid.map(a => "- " + a).join("\n")}\n` : "";
+  return `너는 인문계열 취업준비생의 이력서 '경력·대내외활동' 칸을 지원 직무별로 다시 쓰는 편집자야.
+
+[원문]
+${sourceText(exp.input)}
+
+[원문에서 뽑아둔 사실 — 이 id만 써]
+${facts}
+
+[지원 직무]
+${jobBlock(jobs, exp.input.jd)}
+${others ? `\n[다른 직무용으로 이미 쓴 문장 — 이것들과 앞세우는 사실이나 표현이 겹치지 않게]\n${others}\n` : ""}${avoidTxt}
+[할 일] 위 직무${jobs.length > 1 ? "들" : ""}에 대해서만 새 문장을 써. 직전과 다른 각도로 써도 좋아.
+
+${RULES(exp.input.limit || 80)}
+
+[출력] 아래 모양의 JSON 하나만 답해.
+{"results":[{"job":"직무명","segments":[{"text":"문장 조각","facts":["F1"]}],"reason":"…","tags":["…"]}]}
+${OUTPUT_SPEC}`;
+}
+
+const ERR = {
+  not_granted:"Claude 사용을 허용해야 만들 수 있어요. 페이지 오른쪽 위 권한 메뉴에서 허용할 수 있어요.",
+  sampling_disabled:"이 계정에서는 Claude를 쓸 수 없어요.",
+  rate_limited:"요청이 많아서 잠깐 막혔어요. 1~2분 뒤에 다시 눌러주세요.",
+  session_expired:"claude.ai 로그인이 풀렸어요. 다시 로그인한 뒤 눌러주세요.",
+  invalid_json:"AI 답이 형식에 맞지 않았어요. 다시 눌러주세요.",
+  refused:"AI가 이 입력으로는 답하지 않았어요. 표현을 조금 바꿔서 다시 시도해주세요.",
+  empty_completion:"AI가 빈 답을 보냈어요. 입력을 조금 줄이거나 다시 시도해주세요.",
+  prompt_too_large:"입력이 너무 길어요. 원문을 조금 줄여주세요.",
+  unavailable:"AI 연결은 claude.ai에서 이 페이지를 열었을 때만 돼요."
+};
+const errMsg = e => ERR[e && e.code] || "만들다가 문제가 생겼어요. 다시 시도해주세요.";
+
+async function askJSON(prompt, onText, signal){
+  await samplePromise;
+  if (!sampleFn) throw {code:"unavailable"};
+  try {
+    return await sampleFn.json(prompt, {onText, signal, cache:false});
+  } catch (e) {
+    if (e && e.code === "invalid_json") return await sampleFn.json(prompt, {onText, signal, cache:false}); // 형식 오류만 1회 재요청
+    throw e;
+  }
+}
+
+/* ───────────── 3. 규칙 검사 (AI가 아니라 코드가 함) ───────────── */
+const squash = s => (s || "").replace(/[\s·.,:;'"“”‘’()\[\]\-~/!?]/g, "").toLowerCase();
+const NATIVE = {한:1,두:2,세:3,네:4,다섯:5,여섯:6,일곱:7,여덟:8,아홉:9,열:10,스무:20,스물:20};
+const SINO = {일:1,이:2,삼:3,사:4,오:5,육:6,칠:7,팔:8,구:9,십:10};
+function numbers(text){
+  const found = [];
+  const t = text || "";
+  t.replace(/(\d+(?:[.,]\d+)*)(\s?(?:%|퍼센트|만\s?원|원|곳|명|건|개월|개|주|회|번|위|배|시간|년|일|팀|가지))?/g, (m, n) => { found.push({raw:m.trim(), v:n.replace(/,/g, "").replace(/^0+(?=\d)/, "")}); return m; });
+  t.replace(/(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|스무|스물)\s?(곳|명|건|개|주|회|번|차례|가지|달|팀|시간|군데)/g, (m, n) => { found.push({raw:m, v:String(NATIVE[n])}); return m; });
+  t.replace(/(일|이|삼|사|오|육|칠|팔|구|십)\s?(개월|주간|위)/g, (m, n) => { found.push({raw:m, v:String(SINO[n])}); return m; });
+  return found;
+}
+const ROLE_WORDS = ["주도","총괄","리드","이끌","지휘","전담","단독","책임지","진두"];
+const LEAD_OK = ["주도","리드","이끌"];
+const LEADER_RE = /팀장|리더|대표|회장|단장|조장|부장|기장|반장|PM/;
+
+function checkCard(exp, r){
+  const text = cardText(r);
+  const src = sourceText(exp.input);
+  const srcNums = new Set(numbers(src).map(n => n.v));
+  const warns = [];
+  const seen = new Set();
+  numbers(text).forEach(n => {
+    if (!srcNums.has(n.v) && !seen.has(n.raw)) { seen.add(n.raw); warns.push({type:"num", hit:n.raw, msg:`원문에 없는 숫자 '${n.raw}'`, help:`원문에서 '${n.v}'을(를) 찾지 못했어요. 직접 쓴 숫자가 아니라면 고쳐주세요.`}); }
+  });
+  ROLE_WORDS.forEach(w => {
+    if (text.includes(w) && !src.includes(w)) {
+      if (LEAD_OK.includes(w) && LEADER_RE.test(src)) return;
+      const m = text.match(new RegExp(w + "[가-힣]{0,2}"));
+      warns.push({type:"role", hit:m ? m[0] : w, msg:`원문보다 강한 역할 표현 '${m ? m[0] : w}'`, help:"원문에 이런 역할 표현이 없어요. 실제 역할보다 부풀려지지 않았는지 확인해주세요."});
+    }
+  });
+  if (!r.edited) {
+    const used = new Set((r.segments || []).flatMap(s => s.facts || []));
+    exp.facts.filter(f => used.has(f.id) && !f.ok).forEach(f => {
+      warns.push({type:"src", hit:null, fid:f.id, msg:`원문에서 못 찾은 내용 '${f.quote}'`, help:"AI가 근거로 댄 문구가 원문에 그대로 없어요. 사실인지 확인해주세요."});
+    });
+  }
+  const len = [...text].length;
+  return {warns, len, over: len > (exp.input.limit || 80)};
+}
+function bigrams(s){ const t = squash(s); const set = new Set(); for (let i = 0; i < t.length - 1; i++) set.add(t.slice(i, i + 2)); return set; }
+function similarity(a, b){ const A = bigrams(a), B = bigrams(b); if (!A.size || !B.size) return 0; let n = 0; A.forEach(x => B.has(x) && n++); return n / (A.size + B.size - n); }
+function tooSimilar(exp){
+  const t = exp.order.map(j => cardText(exp.results[j])).filter(Boolean);
+  if (t.length < 2) return false;
+  let sum = 0, c = 0;
+  for (let i = 0; i < t.length; i++) for (let k = i + 1; k < t.length; k++) { sum += similarity(t[i], t[k]); c++; }
+  return sum / c > 0.5;
+}
+
+/* ───────────── 4. 결과 정리 ───────────── */
+const cardText = r => !r ? "" : (r.edited != null ? r.edited : (r.segments || []).map(s => s.text).join("")).trim();
+function normalizeResult(raw, jobs){
+  const out = {};
+  (raw && Array.isArray(raw.results) ? raw.results : []).forEach(r => {
+    if (!r || !Array.isArray(r.segments)) return;
+    let job = String(r.job || "");
+    if (!jobs.includes(job)) job = jobs.find(j => squash(j) === squash(job) || job.includes(j) || j.includes(job)) || job;
+    if (!jobs.includes(job)) return;
+    out[job] = {
+      segments: r.segments.filter(s => s && s.text).map(s => ({text:String(s.text), facts:Array.isArray(s.facts) ? s.facts.map(String) : []})),
+      reason: String(r.reason || ""), tags: Array.isArray(r.tags) ? r.tags.slice(0, 3).map(String) : [],
+      edited: null, copiedAt: null
+    };
+  });
+  return out;
+}
+function verifyFacts(facts, src){
+  const s = squash(src);
+  return (Array.isArray(facts) ? facts : []).filter(f => f && f.id && f.quote).map(f => ({id:String(f.id), quote:String(f.quote), ok: s.includes(squash(f.quote))}));
+}
+
+/* ───────────── 5. 생성 흐름 ───────────── */
+let ctl = null;
+const STEP_LABELS = ["직무별로 뭘 볼지 생각하는 중","원문을 사실 단위로 나누는 중","직무별 문장 쓰는 중","원문과 대조하는 중"];
+function showLoading(step, extra){
+  document.getElementById("layer").innerHTML = `<div class="overlay" role="dialog" aria-live="polite"><div class="box">
+    <h3>직무별로 만드는 중…</h3>
+    <ul class="steps">${STEP_LABELS.map((l, i) => `<li class="${i < step ? "done" : i === step ? "now" : ""}">${l}${i === 2 && extra ? ` <span class="mono">(${extra})</span>` : ""}</li>`).join("")}</ul>
+    <p style="font-size:13px;color:var(--sub);margin:0 0 14px">처음 한 번은 claude.ai가 "Claude 사용을 허용할까요?"라고 물어봐요. 보통 10~40초 걸려요.</p>
+    <button class="btn" type="button" id="stop">그만두기</button></div></div>`;
+  document.getElementById("stop").onclick = () => ctl && ctl.abort();
+}
+const hideLayer = () => { document.getElementById("layer").innerHTML = ""; };
+
+async function generate(){
+  const d = state.draft;
+  const jobs = selectedJobs();
+  state.error = null;
+  ctl = new AbortController();
+  let step = 0; showLoading(0);
+  const onText = ({text}) => {
+    let s = 1, extra = "";
+    if (text.includes('"results"')) { s = 2; const n = (text.split('"results"')[1].match(/"job"/g) || []).length; extra = `${Math.max(1, n)}/${jobs.length}`; }
+    if (s !== step || s === 2) { step = s; showLoading(s, extra); }
+  };
+  try {
+    const raw = await askJSON(generatePrompt(d, jobs), onText, ctl.signal);
+    showLoading(3);
+    const src = sourceText(d);
+    const facts = verifyFacts(raw && raw.facts, src);
+    const results = normalizeResult(raw, jobs);
+    const order = jobs.filter(j => results[j]);
+    if (!order.length) throw {code:"invalid_json"};
+    const now = Date.now();
+    const input = JSON.parse(JSON.stringify({mode:d.mode,name:d.name,role:d.role,period:d.period,did:d.did,result:d.result,tools:d.tools,problem:d.problem,raw:d.raw,jd:d.jd,limit:d.limit}));
+    let exp = d.editingId && state.archive.find(x => x.id === d.editingId);
+    if (exp) Object.assign(exp, {input, facts, results, order, updatedAt:now});
+    else { exp = {id:"e" + now, createdAt:now, updatedAt:now, input, facts, results, order}; state.archive.unshift(exp); }
+    state.archive = state.archive.slice(0, 40);
+    saveArchive();
+    state.draft.editingId = exp.id; state.draft.isExample = false; saveDraft();
+    await new Promise(r => setTimeout(r, 350));
+    openExperience(exp.id);
+  } catch (e) {
+    if (!(e && e.code === "cancelled")) state.error = errMsg(e);
+    render();
+  } finally { hideLayer(); ctl = null; }
+}
+
+async function regenerate(jobs, avoidMap){
+  const exp = current(); if (!exp) return;
+  jobs.forEach(j => state.editing[j] = false);
+  const busy = new Set(jobs);
+  render(busy);
+  const avoid = jobs.flatMap(j => (avoidMap && avoidMap[j]) || []);
+  try {
+    const raw = await askJSON(regenPrompt(exp, jobs, avoid), null, new AbortController().signal);
+    const res = normalizeResult(raw, jobs);
+    let got = 0;
+    jobs.forEach(j => { if (res[j]) { exp.results[j] = res[j]; got++; if (!exp.order.includes(j)) exp.order.push(j); } });
+    if (!got) throw {code:"invalid_json"};
+    exp.updatedAt = Date.now(); saveArchive();
+    toast(jobs.length === 1 ? `${jobs[0]} 문장을 새로 만들었어요` : "새 직무 문장을 만들었어요");
+  } catch (e) {
+    if (!(e && e.code === "cancelled")) toast(errMsg(e));
+  }
+  render();
+}
+
+/* ───────────── 6. 화면 그리기 ───────────── */
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const app = document.getElementById("app");
+function selectedJobs(){ const d = state.draft; const j = [...d.jobs]; if (d.custom && d.custom.trim() && !j.includes(d.custom.trim())) j.push(d.custom.trim()); return j.slice(0, 4); }
+
+function sufficiency(d){
+  const body = d.mode === "raw" ? d.raw : [d.did, d.result, d.problem].join("\n");
+  const facts = body.split(/\n|,|·(?=\s)|\.(?=\s|$)|;/).map(s => s.trim()).filter(s => s.length >= 3).length;
+  const nums = numbers(body).length;
+  const level = facts >= 5 && nums >= 1 ? 3 : facts >= 3 ? 2 : 1;
+  const msg = level === 3 ? `사실 ${facts}개 · 숫자 ${nums}개 · 직무별로 다르게 쓰기 충분해요`
+    : level === 2 ? `사실 ${facts}개${nums ? "" : " · 숫자 없음"} · 성과나 숫자를 하나 더 넣으면 직무별 차이가 커져요`
+    : `사실 ${facts}개 · 이대로면 직무별 문장이 비슷하게 나올 수 있어요`;
+  return {level, msg, facts};
+}
+function canGenerate(){
+  const d = state.draft;
+  const filled = d.mode === "raw" ? (d.raw.trim().length >= 10 && d.name.trim()) : (d.name.trim() && d.role.trim() && d.did.trim());
+  const n = selectedJobs().length;
+  return {ok: !!filled && n >= 2, why: !filled ? (d.mode === "raw" ? "활동명과 내용을 채워주세요" : "활동명, 내 역할, 한 일을 채워주세요") : n < 2 ? "지원 직무를 2개 이상 골라주세요" : `직무 ${n}개로 만들어요`};
+}
+
+function renderInput(){
+  const d = state.draft;
+  const fieldHTML = f => `<div class="field ${f.k === "name" ? "f-name" : ""}">
+      <label for="in-${f.k}">${f.label}${f.req ? " <em>*</em>" : ""}${f.hint ? ` <small>· ${f.hint}</small>` : ""}</label>
+      ${f.multi ? `<textarea id="in-${f.k}" data-k="${f.k}" rows="${f.k === "did" ? 5 : 3}" placeholder="${esc(f.ph)}">${esc(d[f.k])}</textarea>`
+                : `<input id="in-${f.k}" data-k="${f.k}" placeholder="${esc(f.ph)}" value="${esc(d[f.k])}">`}</div>`;
+  const F = k => FIELDS.find(f => f.k === k);
+  const suf = sufficiency(d);
+  const cg = canGenerate();
+  const jobs = selectedJobs();
+  const aiNote = sampleFn === null
+    ? `<div class="notice warn"><span>${ERR.unavailable} 지금은 미리 만들어둔 예시 결과만 볼 수 있어요.</span><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></div>` : "";
+  app.innerHTML = `<div class="narrow stack">
+    ${aiNote}
+    ${d.isExample ? `<div class="notice info"><span>예시 경험이 채워져 있어요. 그대로 만들어 보거나 비우고 내 경험을 넣어보세요.</span><button class="btn sm" type="button" data-act="clear">비우고 시작</button></div>` : ""}
+    ${state.error ? `<div class="notice warn" role="alert"><span>${esc(state.error)} 입력한 내용은 그대로 있어요.</span><button class="btn sm" type="button" data-act="generate">다시 시도</button></div>` : ""}
+    <section class="panel">
+      <div class="sec-h"><h2>1. 경험 넣기</h2>
+        <div class="seg-toggle" role="tablist"><button type="button" data-mode="fields" class="${d.mode === "fields" ? "on" : ""}">항목별로 쓰기</button><button type="button" data-mode="raw" class="${d.mode === "raw" ? "on" : ""}">통째로 붙여넣기</button></div></div>
+      <div class="stack" style="gap:12px">
+        <div class="grid3">${fieldHTML(F("name"))}${fieldHTML(F("role"))}${fieldHTML(F("period"))}</div>
+        ${d.mode === "fields" ? `${fieldHTML(F("did"))}${fieldHTML(F("result"))}
+          <details class="more" ${d.tools || d.problem ? "open" : ""}><summary>사용 툴 · 문제 해결 과정 (선택)</summary><div>${fieldHTML(F("tools"))}${fieldHTML(F("problem"))}</div></details>`
+        : `<div class="field"><label for="in-raw">내용 <em>*</em> <small>· 노션·메모에 써둔 걸 그대로 붙여넣어도 돼요</small></label><textarea id="in-raw" data-k="raw" rows="8" placeholder="한 일, 성과, 사용한 툴, 문제를 해결한 과정까지 생각나는 대로">${esc(d.raw)}</textarea></div>`}
+        <div class="gauge-row"><span>재료</span><div class="gauge l${suf.level}" aria-hidden="true"><i></i><i></i><i></i></div><span id="suf-msg">${esc(suf.msg)}</span></div>
+        <div class="privacy">회사·거래처 이름은 'A사'처럼 바꿔 써도 돼요. 입력한 내용은 서버에 저장하지 않아요.</div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="sec-h"><h2>2. 지원 직무 고르기<small>2~4개</small></h2></div>
+      <div class="chips">${Object.keys(JOBS).map(j => `<button type="button" class="chip ${d.jobs.includes(j) ? "on" : ""}" data-job="${esc(j)}" aria-pressed="${d.jobs.includes(j)}"><b>${esc(j)}</b><small>${esc(JOBS[j].desc)}</small></button>`).join("")}</div>
+      <div class="custom-row"><input id="in-custom" data-k="custom" placeholder="다른 직무 직접 입력 (예: 상품기획 MD)" value="${esc(d.custom)}"></div>
+      <details class="more" style="margin-top:12px" ${Object.values(d.jd || {}).some(v => v) ? "open" : ""}><summary>채용공고 붙여넣기 · 글자 수 제한 (선택)</summary><div>
+        ${jobs.length ? jobs.map((j, i) => `<div class="field"><label for="jd-${i}">${esc(j)} 채용공고 <small>· 자격요건·우대사항 부분만 붙여도 돼요</small></label><textarea id="jd-${i}" data-jd="${esc(j)}" rows="2">${esc((d.jd || {})[j] || "")}</textarea></div>`).join("") : `<p class="privacy" style="margin:0">직무를 고르면 직무별 공고 칸이 생겨요.</p>`}
+        <div class="field" style="max-width:220px"><label for="in-limit">글자 수 제한 (공백 포함)</label><input id="in-limit" type="number" min="30" max="300" step="5" data-k="limit" value="${esc(d.limit)}"></div>
+      </div></details>
+    </section>
+    <div class="cta-row"><span class="hint" id="cta-hint">${esc(cg.why)}</span><button class="btn primary lg" type="button" id="go" ${cg.ok ? "" : "disabled"}>직무별로 만들기 →</button></div>
+  </div>`;
+}
+
+function renderSentence(r, warns){
+  const hits = warns.map(w => w.hit).filter(Boolean);
+  const mark = t => { let h = esc(t); hits.forEach(x => { const ex = esc(x); h = h.split(ex).join(`<span class="bad">${ex}</span>`); }); return h; };
+  if (r.edited != null) return mark(r.edited);
+  return (r.segments || []).map(s => `<span class="sg" data-f="${esc((s.facts || []).join(" "))}">${mark(s.text)}</span>`).join("");
+}
+
+function renderResult(busy){
+  const exp = current();
+  if (!exp) { state.view = "input"; return renderInput(); }
+  const isDemo = exp.id === "demo";
+  const remaining = Object.keys(JOBS).filter(j => !exp.order.includes(j));
+  const cards = exp.order.map((j, idx) => {
+    const r = exp.results[j];
+    const c = checkCard(exp, r);
+    const facts = [...new Set((r.segments || []).flatMap(s => s.facts || []))];
+    const editing = state.editing[j];
+    return `<article class="card ${c.warns.length ? "has-warn" : ""} ${busy && busy.has(j) ? "busy" : ""} ${idx === state.mTab ? "m-on" : ""}" data-job="${esc(j)}" data-facts="${esc(r.edited != null ? "" : facts.join(" "))}">
+      <div class="card-h"><h4>${esc(j)}</h4><span class="len ${c.over ? "over" : ""}">${c.len}자 / ${exp.input.limit || 80}자</span></div>
+      ${editing ? `<textarea class="editor" data-edit="${esc(j)}" aria-label="${esc(j)} 문장 고치기">${esc(cardText(r))}</textarea>`
+                : `<p class="sentence" data-act="edit" title="눌러서 고치기">${renderSentence(r, c.warns)}</p>`}
+      ${r.tags && r.tags.length && r.edited == null ? `<div class="tags">${r.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : ""}
+      ${r.reason ? `<div class="why"><b>왜 이렇게?</b> ${esc(r.reason)}</div>` : ""}
+      ${editing ? `<div class="live-check">${c.warns.length ? `<p class="check bad-c">⚠ ${c.warns.map(w => esc(w.msg)).join(" · ")}</p>` : `<p class="check ok">✓ 숫자·역할 표현이 원문과 일치해요</p>`}</div>`
+      : c.warns.length ? `<div class="warns" role="status"><p class="check bad-c">⚠ 확인이 필요한 곳 ${c.warns.length}개</p>${c.warns.map(w => `<p><b>${esc(w.msg)}</b><br>${esc(w.help)}</p>`).join("")}
+          <div class="acts"><button class="btn sm" type="button" data-act="edit">직접 고치기</button>${isDemo ? "" : `<button class="btn sm" type="button" data-act="regen-fix">문제 빼고 다시 만들기</button>`}</div></div>`
+        : `<p class="check ok">✓ 숫자·역할 표현이 원문과 일치해요</p>`}
+      <div class="card-f">
+        ${r.copiedAt ? `<span class="copied">✓ 복사함 ${new Date(r.copiedAt).toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit"})}</span>` : `<span></span>`}
+        <div class="acts">
+          ${editing ? `<button class="btn sm" type="button" data-act="done">다 고쳤어요</button>` : ""}
+          ${r.edited != null || editing ? `<button class="btn sm quiet" type="button" data-act="revert">원래대로</button>` : ""}
+          ${isDemo ? "" : `<button class="btn sm quiet" type="button" data-act="regen">다시 만들기</button>`}
+          <button class="btn sm primary" type="button" data-act="copy">복사</button>
+        </div>
+      </div></article>`;
+  }).join("");
+  const addCard = !isDemo && exp.order.length < 4 ? `<div class="addcard">${state.addOpen
+      ? `<span style="font-size:14px">어떤 직무를 더 볼까요?</span><div class="chips">${remaining.map(j => `<button class="chip" type="button" data-add="${esc(j)}"><b>${esc(j)}</b></button>`).join("")}</div>
+         <div class="custom-row" style="width:100%;max-width:320px"><input id="add-custom" placeholder="다른 직무 직접 입력"><button class="btn sm" type="button" data-act="add-custom">추가</button></div>
+         <button class="btn sm quiet" type="button" data-act="add-close">닫기</button>`
+      : `<button class="btn" type="button" data-act="add-open">＋ 직무 추가</button>`}</div>` : "";
+  app.innerHTML = `
+    <div class="rbar"><div class="left"><button class="btn quiet sm" type="button" data-act="back">← 입력 수정</button><h1>${esc(exp.input.name || "이름 없는 경험")}</h1>${isDemo ? `<span class="demo-badge">예시 결과 · 미리 만들어둔 것</span>` : ""}</div>
+      <div class="right"><button class="btn sm" type="button" data-act="new">새 경험</button></div></div>
+    ${tooSimilar(exp) ? `<div class="notice warn banner"><span>직무별 문장이 서로 비슷해요. 한 일이나 성과를 1~2개 더 넣으면 차이가 커져요.</span><button class="btn sm" type="button" data-act="back">입력 보강하기</button></div>` : ""}
+    <div class="work">
+      <aside class="src" id="src"><h3>원문</h3><p class="sub">카드에 마우스를 올리면 근거가 형광펜으로 켜져요</p>
+        ${exp.facts.map(f => `<div class="fact ${f.ok ? "" : "unv"}" data-fid="${esc(f.id)}"><span class="fid">${esc(f.id)}</span><span>${esc(f.quote)}</span></div>`).join("")}
+        ${exp.facts.some(f => !f.ok) ? `<p class="sub" style="margin:8px 0 0;color:var(--warn)">? 표시는 원문에서 그대로 찾지 못한 문구예요</p>` : ""}
+        <details><summary>입력한 원문 전체 보기</summary><pre>${esc(sourceText(exp.input))}</pre></details>
+      </aside>
+      <section>
+        <div class="mtabs" role="tablist">${exp.order.map((j, i) => { const w = checkCard(exp, exp.results[j]).warns.length; return `<button type="button" data-mtab="${i}" class="${i === state.mTab ? "on" : ""}">${esc(j)}${w ? " ⚠" : ""}</button>`; }).join("")}</div>
+        <div class="cards ${exp.order.length === 1 && !addCard ? "one" : ""}">${cards}${addCard}</div>
+      </section>
+    </div>`;
+  bindHighlight();
+  const ed = app.querySelector(".editor");
+  if (ed) { ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
+}
+
+function render(busy){
+  if (state.view === "result") renderResult(busy); else renderInput();
+  renderDrawer();
+}
+
+/* ───────────── 7. 근거 하이라이트 ───────────── */
+function bindHighlight(){
+  const facts = [...app.querySelectorAll(".fact")];
+  const lit = (ids, strong) => facts.forEach(f => {
+    f.classList.toggle("lit", ids.includes(f.dataset.fid));
+    f.classList.toggle("strong", strong.includes(f.dataset.fid));
+  });
+  app.querySelectorAll(".card").forEach(c => {
+    const ids = (c.dataset.facts || "").split(" ").filter(Boolean);
+    c.addEventListener("mouseenter", () => lit(ids, []));
+    c.addEventListener("mouseleave", () => lit([], []));
+    c.addEventListener("focusin", () => lit(ids, []));
+    c.querySelectorAll(".sg").forEach(s => {
+      const own = (s.dataset.f || "").split(" ").filter(Boolean);
+      s.addEventListener("mouseenter", () => lit(ids, own));
+      s.addEventListener("mouseleave", () => lit(ids, []));
+    });
+  });
+}
+
+/* ───────────── 8. 보관함 ───────────── */
+function renderDrawer(){
+  const layer = document.getElementById("drawer-layer");
+  if (!state.drawer) { if (layer) layer.remove(); return; }
+  const html = `<div class="drawer-bg" data-act="drawer-close"></div><aside class="drawer" aria-label="내 경험 보관함">
+    <div class="item-h"><h3>내 경험 보관함</h3><button class="btn sm quiet" type="button" data-act="drawer-close">닫기</button></div>
+    ${state.archive.length ? state.archive.map(x => `<div class="item">
+      <div class="item-h"><button class="open" type="button" data-open="${esc(x.id)}">${esc(x.input.name || "이름 없는 경험")}</button>
+        ${state.confirmDelete === x.id ? `<span style="display:flex;gap:4px"><button class="btn sm" type="button" data-del-yes="${esc(x.id)}">삭제</button><button class="btn sm quiet" type="button" data-act="del-no">취소</button></span>`
+          : `<button class="btn sm quiet" type="button" data-del="${esc(x.id)}" aria-label="삭제">삭제</button>`}</div>
+      <div class="tags">${x.order.map(j => `<span class="tag ${x.results[j] && x.results[j].copiedAt ? "cp" : ""}">${esc(j)}${x.results[j] && x.results[j].copiedAt ? " ✓" : ""}</span>`).join("")}</div>
+      <div class="meta">${new Date(x.updatedAt).toLocaleDateString("ko-KR", {month:"numeric", day:"numeric"})} 수정${state.confirmDelete === x.id ? " · 지우면 되돌릴 수 없어요" : ""}</div></div>`).join("")
+      : `<div class="empty">아직 저장된 경험이 없어요.<br>결과를 만들면 여기에 자동으로 모여요.</div>`}
+    <p class="privacy">✓ 표시는 복사한 직무예요. 보관함은 이 브라우저에만 있어요.</p></aside>`;
+  let el = layer;
+  if (!el) { el = document.createElement("div"); el.id = "drawer-layer"; document.body.appendChild(el); el.addEventListener("click", onClick); }
+  el.innerHTML = html;
+}
+function updateCount(){ document.getElementById("archive-count").textContent = state.archive.length; }
+
+function openExperience(id){
+  state.currentId = id; state.view = "result"; state.drawer = false; state.addOpen = false; state.mTab = 0; state.editing = {};
+  if (id !== "demo") { store.set("current", id); }
+  render(); window.scrollTo({top:0});
+}
+function openDemo(){
+  const facts = verifyFacts(EXAMPLE_RESULT.facts, sourceText(EXAMPLE));
+  const results = normalizeResult(EXAMPLE_RESULT, ["마케팅","서비스기획·PM","영업관리"]);
+  const demo = {id:"demo", input:{...EXAMPLE, jd:{}, limit:80}, facts, results, order:["마케팅","서비스기획·PM","영업관리"], updatedAt:Date.now()};
+  state.archive = state.archive.filter(x => x.id !== "demo");
+  state._demo = demo;
+  state.currentId = "demo"; state.view = "result"; state.editing = {}; state.mTab = 0;
+  render();
+}
+function findExp(id){ return id === "demo" ? state._demo : state.archive.find(x => x.id === id); }
+
+/* ───────────── 9. 이벤트 ───────────── */
+let toastTimer;
+function toast(msg){
+  clearTimeout(toastTimer);
+  let t = document.querySelector(".toast"); if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+  t.textContent = msg; toastTimer = setTimeout(() => t.remove(), 2200);
+}
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) {
+    const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch (_) {} ta.remove(); return ok;
+  }
+}
+function lightUpdateInput(){
+  const suf = sufficiency(state.draft), cg = canGenerate();
+  const g = app.querySelector(".gauge"); if (g) g.className = "gauge l" + suf.level;
+  const m = document.getElementById("suf-msg"); if (m) m.textContent = suf.msg;
+  const h = document.getElementById("cta-hint"); if (h) h.textContent = cg.why;
+  const go = document.getElementById("go"); if (go) go.disabled = !cg.ok;
+}
+app.addEventListener("input", e => {
+  const t = e.target;
+  if (state.view === "input") {
+    if (t.dataset.k) { state.draft[t.dataset.k] = t.dataset.k === "limit" ? Math.max(30, Math.min(300, parseInt(t.value, 10) || 80)) : t.value; }
+    if (t.dataset.jd) { state.draft.jd = state.draft.jd || {}; state.draft.jd[t.dataset.jd] = t.value; }
+    saveDraft(); lightUpdateInput();
+  } else if (t.dataset.edit) {
+    const exp = current(), j = t.dataset.edit, r = exp.results[j];
+    r.edited = t.value; saveArchiveIfReal(exp);
+    const card = t.closest(".card"), c = checkCard(exp, r);
+    const len = card.querySelector(".len"); len.textContent = `${c.len}자 / ${exp.input.limit || 80}자`; len.classList.toggle("over", c.over);
+    let live = card.querySelector(".live-check");
+    if (!live) { live = document.createElement("div"); live.className = "live-check"; t.after(live); }
+    live.innerHTML = c.warns.length ? `<p class="check bad-c">⚠ ${c.warns.map(w => esc(w.msg)).join(" · ")}</p>` : `<p class="check ok">✓ 숫자·역할 표현이 원문과 일치해요</p>`;
+  }
+});
+app.addEventListener("change", e => { if (e.target.id === "in-custom" || e.target.dataset.k === "limit") render(); });
+function saveArchiveIfReal(exp){ if (exp.id !== "demo") { exp.updatedAt = Date.now(); saveArchive(); } }
+
+function onClick(e){
+  const t = e.target.closest("button, [data-act], [data-open], [data-del], [data-del-yes]");
+  if (!t) return;
+  const card = t.closest(".card"); const job = card && card.dataset.job;
+  const exp = state.view === "result" ? current() : null;
+  if (t.dataset.mode) { state.draft.mode = t.dataset.mode; saveDraft(); return render(); }
+  if (t.dataset.job && t.classList.contains("chip")) {
+    const j = t.dataset.job, d = state.draft;
+    if (d.jobs.includes(j)) d.jobs = d.jobs.filter(x => x !== j);
+    else if (selectedJobs().length < 4) d.jobs.push(j); else toast("직무는 4개까지 고를 수 있어요");
+    saveDraft(); return render();
+  }
+  if (t.id === "go") return generate();
+  if (t.dataset.mtab) { state.mTab = +t.dataset.mtab; return render(); }
+  if (t.dataset.add) { state.addOpen = false; return regenerate([t.dataset.add]); }
+  if (t.dataset.open) return openExperience(t.dataset.open);
+  if (t.dataset.del) { state.confirmDelete = t.dataset.del; return renderDrawer(); }
+  if (t.dataset.delYes) {
+    state.archive = state.archive.filter(x => x.id !== t.dataset.delYes); saveArchive();
+    if (state.draft.editingId === t.dataset.delYes) { state.draft.editingId = null; saveDraft(); }
+    if (state.currentId === t.dataset.delYes) { state.view = "input"; state.currentId = null; }
+    state.confirmDelete = null; toast("삭제했어요"); return render();
+  }
+  switch (t.dataset.act) {
+    case "generate": return generate();
+    case "demo": return openDemo();
+    case "clear": state.draft = blankDraft(); saveDraft(); return render();
+    case "back": {
+      if (exp && exp.id !== "demo") { state.draft = Object.assign(blankDraft(), JSON.parse(JSON.stringify(exp.input)), {jobs: exp.order.filter(j => JOBS[j]), custom: exp.order.find(j => !JOBS[j]) || "", editingId: exp.id}); saveDraft(); }
+      state.view = "input"; state.error = null; return render();
+    }
+    case "new": state.draft = blankDraft(); saveDraft(); state.view = "input"; state.currentId = null; state.error = null; render(); window.scrollTo({top:0}); return toast(exp && exp.id !== "demo" ? "지금 경험은 보관함에 저장돼 있어요" : "새 경험을 넣어주세요");
+    case "drawer-close": state.drawer = false; state.confirmDelete = null; return renderDrawer();
+    case "del-no": state.confirmDelete = null; return renderDrawer();
+    case "add-open": state.addOpen = true; return render();
+    case "add-close": state.addOpen = false; return render();
+    case "add-custom": { const v = (document.getElementById("add-custom").value || "").trim(); if (!v) return; if (exp.order.includes(v)) return toast("이미 있는 직무예요"); state.addOpen = false; return regenerate([v]); }
+    case "edit": if (job && !state.editing[job]) { state.editing[job] = true; render(); } return;
+    case "done": state.editing[job] = false; { const r = exp.results[job]; if (r.edited != null && r.edited.trim() === (r.segments || []).map(s => s.text).join("").trim()) r.edited = null; saveArchiveIfReal(exp); } return render();
+    case "revert": exp.results[job].edited = null; state.editing[job] = false; saveArchiveIfReal(exp); return render();
+    case "regen": return regenerate([job]);
+    case "regen-fix": { const c = checkCard(exp, exp.results[job]); return regenerate([job], {[job]: c.warns.map(w => w.msg)}); }
+    case "copy": {
+      const r = exp.results[job];
+      const text = state.editing[job] ? (card.querySelector(".editor").value || "") : cardText(r);
+      copyText(text).then(ok => {
+        if (!ok) return toast("복사가 막혀 있어요. 문장을 눌러 직접 선택해 복사해주세요");
+        r.copiedAt = Date.now(); state.editing[job] = false; saveArchiveIfReal(exp); render(); toast(`${job} 문장을 복사했어요`);
+      });
+      return;
+    }
+  }
+}
+app.addEventListener("click", onClick);
+document.getElementById("open-archive").addEventListener("click", () => { state.drawer = true; renderDrawer(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && state.drawer) { state.drawer = false; renderDrawer(); } });
+
+// current()는 예시 결과도 찾을 수 있게
+function current(){ return findExp(state.currentId); }
+
+updateCount();
+render();
+</script>
