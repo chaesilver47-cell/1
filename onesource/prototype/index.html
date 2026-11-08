@@ -189,6 +189,47 @@ a.btn.primary{color:var(--on-accent)}
 #topnote{max-width:760px;margin:0 auto}
 #topnote .notice.top{margin-bottom:16px}
 .overlay .box.dup{width:min(440px,100%)}
+.dup-need{font-size:14px;background:var(--bg);border-radius:8px;padding:8px 10px;margin:0 0 14px}
+.add-post{width:100%;justify-content:center;border-style:dashed;padding:12px}
+.or-line{font-size:13px;color:var(--sub);margin:14px 0 8px}
+.star{border-color:var(--line-strong)}
+.star.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.tools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:13px;color:var(--sub)}
+.seg-toggle.sm button{padding:3px 10px;font-size:12px}
+.len-ctl{display:inline-flex;align-items:center;gap:6px}
+.len-ctl input{width:4.5em;border:1px solid var(--line-strong);border-radius:6px;padding:3px 6px;background:var(--surface);font-family:var(--f-mono);font-size:13px}
+.sentence.outline{font-size:16px}
+.vtext{white-space:pre-line}
+.ask-use{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;background:var(--accent-soft);border-radius:8px;padding:8px 10px}
+.ask-use input{flex:1 1 140px;min-width:0;border:1px solid var(--line-strong);border-radius:6px;padding:4px 8px;background:var(--surface)}
+.hist{font-size:13px;color:var(--sub)}
+.hist summary{cursor:pointer}
+.hist-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px dashed var(--line);color:var(--ink)}
+.vtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+.vtabs button{border:0;background:transparent;padding:9px 12px;font-size:15px;color:var(--sub);border-bottom:2px solid transparent;white-space:nowrap}
+.vtabs button.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+.vwrap{max-width:860px;margin:0 auto;padding-bottom:70px}
+.vbar{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.vbar input{border:1px solid var(--line-strong);border-radius:8px;padding:9px 11px;background:var(--surface);font-size:15px}
+.fchips{display:flex;gap:6px;flex-wrap:wrap}
+.fchip{border:1px solid var(--line-strong);background:var(--surface);border-radius:999px;padding:3px 11px;font-size:13px}
+.fchip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.vhint{font-size:13px;color:var(--sub);margin:4px 0 10px}
+.vlist{display:flex;flex-direction:column;gap:8px}
+.vrow{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.vrow.sel{border-color:var(--accent);background:var(--accent-soft)}
+.vchk{margin-top:5px;width:18px;height:18px;flex:none;accent-color:var(--accent)}
+.vbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.vtext{margin:0;font-size:16px;font-weight:600;line-height:1.5}
+.vacts{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+@media (max-width:560px){.vrow{flex-wrap:wrap}.vacts{flex-direction:row;width:100%;justify-content:flex-end}}
+.selbar{position:sticky;bottom:max(12px,env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--ink);color:var(--surface);border-radius:12px;padding:10px 14px;margin-top:12px;box-shadow:0 6px 24px rgba(0,0,0,.2)}
+.selbar span{flex:1 1 auto;font-size:14px}
+.selbar input{flex:1 1 140px;min-width:0;border:0;border-radius:6px;padding:5px 8px}
+.selbar .btn.quiet{color:var(--surface)}
+.logrow{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:4px 12px;align-items:baseline;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:14px}
+.logrow .ltext{min-width:0}
+.logrow .meta{grid-column:3}
 .dup-sub{font-size:14px;color:var(--sub);margin:0 0 14px}
 .dup-steps{margin:0 0 18px;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:15px}
 .owner-tag{font-size:16px;font-weight:600;color:var(--sub)}
@@ -231,7 +272,7 @@ a.btn.primary{color:var(--on-accent)}
 <div class="wrap">
   <header class="top">
     <div class="brand"><b>OneSource</b><span class="owner-tag" id="owner-tag"></span></div>
-    <button class="btn" id="open-archive" type="button">보관함 <span class="count" id="archive-count">0</span></button>
+    <button class="btn" id="open-archive" type="button">내 창고 <span class="count" id="archive-count">0</span></button>
   </header>
   <div id="topnote"></div>
   <main id="app"></main>
@@ -304,11 +345,16 @@ let state = {
   addOpen: false,
   confirmDelete: null,
   editing: {},
+  vault: store.get("vault", []), // 문장 창고: 저장해둔 문장 스냅샷 + 어디에 냈는지 기록
+  vtab: "lines", vq: "", vfilter: "all", vsel: [], vAsk: null, bulkAsk: false, prevView: "input",
+  askUse: null,  // 결과 카드에서 복사 직후 "어디에 냈어요?" 묻는 중인 카드
+  pformHidden: false,
   pform: null,   // 입력 화면 공고 폼
   rpform: null   // 결과 화면 공고 폼
 };
 const saveDraft = () => store.set("draft", state.draft);
 const saveArchive = () => { store.set("archive", state.archive); updateCount(); };
+const saveVault = () => { store.set("vault", state.vault); updateCount(); };
 
 /* ───────────── 2. AI 연결 (claude.ai 아티팩트의 sample) ───────────── */
 // 연결 방식 두 가지
@@ -473,7 +519,7 @@ const LEAD_OK = ["주도","리드","이끌"];
 const LEADER_RE = /팀장|리더|대표|회장|단장|조장|부장|기장|반장|PM/;
 
 function checkCard(exp, r){
-  const text = cardText(r);
+  const text = activeText(r);
   const src = sourceText(exp.input);
   const srcNums = new Set(numbers(src).map(n => n.v));
   const warns = [];
@@ -488,14 +534,14 @@ function checkCard(exp, r){
       warns.push({type:"role", hit:m ? m[0] : w, msg:`원문보다 강한 역할 표현 '${m ? m[0] : w}'`, help:"원문에 이런 역할 표현이 없어요. 실제 역할보다 부풀려지지 않았는지 확인해주세요."});
     }
   });
-  if (!r.edited) {
+  if (!r.edited && r.mode !== "outline") {
     const used = new Set((r.segments || []).flatMap(s => s.facts || []));
     exp.facts.filter(f => used.has(f.id) && !f.ok).forEach(f => {
       warns.push({type:"src", hit:null, fid:f.id, msg:`원문에서 못 찾은 내용 '${f.quote}'`, help:"AI가 근거로 댄 문구가 원문에 그대로 없어요. 사실인지 확인해주세요."});
     });
   }
   const len = [...text].length;
-  return {warns, len, over: len > (exp.input.limit || 80)};
+  return {warns, len, over: len > limitOf(exp, r)};
 }
 function bigrams(s){ const t = squash(s); const set = new Set(); for (let i = 0; i < t.length - 1; i++) set.add(t.slice(i, i + 2)); return set; }
 function similarity(a, b){ const A = bigrams(a), B = bigrams(b); if (!A.size || !B.size) return 0; let n = 0; A.forEach(x => B.has(x) && n++); return n / (A.size + B.size - n); }
@@ -509,6 +555,9 @@ function tooSimilar(exp){
 
 /* ───────────── 4. 결과 정리 ───────────── */
 const cardText = r => !r ? "" : (r.edited != null ? r.edited : (r.segments || []).map(s => s.text).join("")).trim();
+// 지금 카드에 보이는 글: 개요식이면 개요식, 아니면 줄글
+const activeText = r => !r ? "" : (r.mode === "outline" && r.outline ? r.outline : cardText(r));
+const limitOf = (exp, r) => (r && r.limit) || exp.input.limit || 80;
 function normalizeResult(raw, jobs){
   const out = {};
   (raw && Array.isArray(raw.results) ? raw.results : []).forEach(r => {
@@ -544,6 +593,7 @@ function showLoading(step, extra){
 const hideLayer = () => { document.getElementById("layer").innerHTML = ""; };
 
 async function generate(){
+  commitPendingPosting();
   const d = state.draft;
   const targets = selectedTargets();
   const jobs = targets.map(t => t.label);
@@ -590,10 +640,96 @@ async function regenerate(jobs, avoidMap){
     const raw = await askJSON(regenPrompt(exp, jobs, avoid), null, new AbortController().signal);
     const res = normalizeResult(raw, jobs);
     let got = 0;
-    jobs.forEach(j => { if (res[j]) { exp.results[j] = res[j]; got++; if (!exp.order.includes(j)) exp.order.push(j); } });
+    jobs.forEach(j => {
+      if (!res[j]) return;
+      const old = exp.results[j];
+      if (old) { const prev = cardText(old); res[j].history = [prev, ...(old.history || [])].filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 5); } // 다시 만들어도 예전 문장은 남긴다
+      exp.results[j] = res[j]; got++; if (!exp.order.includes(j)) exp.order.push(j);
+    });
     if (!got) throw {code:"invalid_json"};
     exp.updatedAt = Date.now(); saveArchive();
     toast(jobs.length === 1 ? `${jobs[0]} 문장을 새로 만들었어요` : "새 직무 문장을 만들었어요");
+  } catch (e) {
+    if (!(e && e.code === "cancelled")) toast(errMsg(e));
+  }
+  render();
+}
+
+/* 카드 하나만 다시 쓰기: 글자 수만 바꾸기 / 개요식으로 바꾸기 */
+function outlinePrompt(exp, job){
+  const r = exp.results[job];
+  return `너는 인문계열 취업준비생의 이력서 '경력·대내외활동' 칸을 다듬는 편집자야. 아래 [지금 문장]을 개요식(불릿)으로 바꿔.
+
+[원문]
+${sourceText(exp.input)}
+
+[지원 대상]
+${targetBlock([targetOf(exp, job)])}
+
+[지금 문장]
+${cardText(r)}
+
+[규칙]
+- 2~4줄. 한 줄에 사실이나 성과 하나만.
+- 각 줄은 명사형이나 '~함', '~달성', '~완료'로 짧게 끝내. 줄 앞에 '-' 같은 기호는 붙이지 마.
+- 지금 문장에서 앞세운 순서와 강조점을 그대로 지켜.
+- 지금 문장이나 원문에 없는 숫자·성과는 절대 만들지 마. 역할 표현도 부풀리지 마.
+- 줄을 모두 합친 글자 수(공백 포함)가 ${limitOf(exp, r)}자 안팎을 넘지 않게.
+
+[출력] {"outline":["첫 줄","둘째 줄"]} 모양의 JSON 하나만 답해.`;
+}
+function resizePrompt(exp, job, n){
+  const r = exp.results[job];
+  const facts = exp.facts.map(f => `${f.id}: ${f.quote}`).join("\n");
+  return `너는 인문계열 취업준비생의 이력서 '경력·대내외활동' 칸을 다듬는 편집자야. 아래 [지금 문장]의 강조점과 앞세운 순서는 그대로 두고, 길이만 공백 포함 ${n}자 이하(가능하면 ${Math.round(n * 0.8)}자 이상)로 다시 써.
+- 지금보다 길게 써야 하면: 원문 사실 중 이 대상에 맞는 걸 더 붙여.
+- 지금보다 짧게 써야 하면: 덜 중요한 사실부터 빼.
+
+[원문]
+${sourceText(exp.input)}
+
+[원문에서 뽑아둔 사실 — 이 id만 써]
+${facts}
+
+[지원 대상]
+${targetBlock([targetOf(exp, job)])}
+
+[지금 문장]
+${cardText(r)}
+
+${RULES(n)}
+
+[출력] 아래 모양의 JSON 하나만 답해.
+{"results":[{"job":"대상 이름","segments":[{"text":"문장 조각","facts":["F1"]}],"reason":"…","tags":["…"],"keywords":["…"]}]}
+${OUTPUT_SPEC}`;
+}
+async function rewriteCard(job, kind){
+  const exp = current(); if (!exp) return;
+  const r = exp.results[job];
+  state.editing[job] = false;
+  render(new Set([job]));
+  try {
+    if (kind === "outline") {
+      const raw = await askJSON(outlinePrompt(exp, job), null, new AbortController().signal);
+      let lines = raw && raw.outline;
+      if (typeof lines === "string") lines = lines.split("\n");
+      lines = (Array.isArray(lines) ? lines : []).map(l => String(l).replace(/^\s*[-•·*▪]\s*/, "").trim()).filter(Boolean).slice(0, 5);
+      if (!lines.length) throw {code:"invalid_json"};
+      r.outline = lines.map(l => "- " + l).join("\n"); r.outlineOf = cardText(r); r.mode = "outline";
+      toast("개요식으로 바꿨어요");
+    } else {
+      const n = kind.resize;
+      const raw = await askJSON(resizePrompt(exp, job, n), null, new AbortController().signal);
+      const res = normalizeResult(raw, [job]);
+      if (!res[job]) throw {code:"invalid_json"};
+      const prev = activeText(r);
+      res[job].history = [prev, ...(r.history || [])].filter((x, i, a) => x && a.indexOf(x) === i).slice(0, 5);
+      res[job].limit = n;
+      if (!res[job].keywords.length && r.keywords) res[job].keywords = r.keywords;
+      exp.results[job] = res[job];
+      toast(`${n}자에 맞춰 다시 썼어요${r.mode === "outline" ? " · 개요식은 다시 눌러주세요" : ""}`);
+    }
+    saveArchiveIfReal(exp);
   } catch (e) {
     if (!(e && e.code === "cancelled")) toast(errMsg(e));
   }
@@ -609,15 +745,27 @@ function selectedTargets(){
   d.jobs.forEach(j => list.push({label:j, kind:"job"}));
   const c = (d.custom || "").trim();
   if (c && !list.some(t => t.label === c)) list.push({label:c, kind:"job"});
-  (d.postings || []).forEach(p => {
+  const pending = pendingPosting();
+  [...(d.postings || []), ...(pending ? [pending] : [])].forEach(p => {
     let l = postingLabel(p); while (list.some(t => t.label === l)) l += " ②";
     list.push({label:l, kind:"posting", company:(p.company || "").trim(), title:(p.title || "").trim(), jd:p.jd || ""});
   });
   return list.slice(0, 4);
 }
 const selectedJobs = () => selectedTargets().map(t => t.label);
+// 공고 칸에 써놓고 [공고 추가]를 안 눌렀어도, 직무명+공고가 있으면 지원 대상으로 친다
+function pendingPosting(){
+  const f = state.pform;
+  if (!f || f.id || postingError(f)) return null;
+  return f;
+}
+function commitPendingPosting(){
+  const f = pendingPosting(); if (!f) return;
+  state.draft.postings = [...(state.draft.postings || []), {...f, id:"p" + Date.now()}];
+  state.pform = null; saveDraft();
+}
 function keywordHits(r){
-  const sq = squash(cardText(r));
+  const sq = squash(activeText(r));
   return (r.keywords || []).map(k => {
     const words = k.replace(/\s*(역량|능력|경험|스킬)$/, "").split(/\s+/).map(w => squash(w).replace(/(을|를|이|가|의|및|과|와)$/, "")).filter(w => w.length >= 2);
     return {k, used: words.length > 0 && words.every(w => sq.includes(w))};
@@ -636,7 +784,7 @@ function postingFormHTML(f, prefix){
       <div class="field"><label for="${prefix}-title">직무명 <em>*</em></label><input id="${prefix}-title" data-pf="title" placeholder="예) 콘텐츠 마케팅" value="${esc(f.title)}"></div>
     </div>
     <div class="field"><label for="${prefix}-jd">공고 내용 <em>*</em> <small>· 주요 업무·자격요건·우대사항을 그대로 붙여넣어요</small></label><textarea id="${prefix}-jd" data-pf="jd" rows="6" placeholder="[주요 업무]&#10;- 브랜드 SNS 채널 운영 및 콘텐츠 기획&#10;[자격 요건]&#10;- 데이터 기반으로 성과를 분석할 수 있는 분">${esc(f.jd)}</textarea></div>
-    <div class="row-end"><button class="btn sm quiet" type="button" data-act="${prefix}-cancel">취소</button><button class="btn sm primary" type="button" data-act="${prefix}-save">${f.id ? "수정 완료" : "공고 추가"}</button></div>
+    <div class="row-end"><button class="btn sm quiet" type="button" data-act="${prefix}-cancel">${prefix === "pf" && !f.id && !(state.draft.postings || []).length ? "공고 없이 할게요" : "취소"}</button><button class="btn sm primary" type="button" data-act="${prefix}-save">${f.id ? "수정 완료" : "공고 추가"}</button></div>
   </div>`;
 }
 
@@ -654,11 +802,12 @@ function canGenerate(){
   const d = state.draft;
   const filled = d.mode === "raw" ? (d.raw.trim().length >= 10 && d.name.trim()) : (d.name.trim() && d.role.trim() && d.did.trim());
   const n = selectedJobs().length;
-  return {ok: !!filled && n >= 2, why: !filled ? (d.mode === "raw" ? "활동명과 내용을 채워주세요" : "활동명, 내 역할, 한 일을 채워주세요") : n < 2 ? "직무나 채용공고를 2개 이상 골라주세요" : `지원 대상 ${n}개로 만들어요`};
+  return {ok: !!filled && n >= 1, why: !filled ? (d.mode === "raw" ? "활동명과 내용을 채워주세요" : "활동명, 내 역할, 한 일을 채워주세요") : n < 1 ? "채용공고를 붙여넣거나 직무를 1개 이상 골라주세요" : `지원 대상 ${n}개로 만들어요`};
 }
 
 function renderInput(){
   const d = state.draft;
+  if (!state.pform && !state.pformHidden && !(d.postings || []).length) state.pform = {id:null, company:"", title:"", jd:""}; // 공고 붙여넣기가 기본
   const fieldHTML = f => `<div class="field ${f.k === "name" ? "f-name" : ""}">
       <label for="in-${f.k}">${f.label}${f.req ? " <em>*</em>" : ""}${f.hint ? ` <small>· ${f.hint}</small>` : ""}</label>
       ${f.multi ? `<textarea id="in-${f.k}" data-k="${f.k}" rows="${f.k === "did" ? 5 : 3}" placeholder="${esc(f.ph)}">${esc(d[f.k])}</textarea>`
@@ -688,11 +837,11 @@ function renderInput(){
       </div>
     </section>
     <section class="panel">
-      <div class="sec-h"><h2>2. 어디에 지원해요?<small>직무나 채용공고 2~4개</small></h2></div>
-      <div class="chips">${Object.keys(JOBS).map(j => `<button type="button" class="chip ${d.jobs.includes(j) ? "on" : ""}" data-job="${esc(j)}" aria-pressed="${d.jobs.includes(j)}"><b>${esc(j)}</b><small>${esc(JOBS[j].desc)}</small></button>`).join("")}
-        ${state.pform ? "" : `<button type="button" class="chip add" data-act="pf-new" ${jobs.length >= 4 ? "disabled" : ""}><b>＋ 채용공고 붙여넣기</b><small>공고에 맞춘 문장을 따로 만들어요</small></button>`}</div>
+      <div class="sec-h"><h2>2. 어디에 지원해요?<small>채용공고 또는 직무, 1~4개</small></h2></div>
       ${(d.postings || []).length ? `<div class="posts">${d.postings.map(p => `<div class="post"><span class="post-badge">공고</span><div class="post-t"><b>${esc(postingLabel(p))}</b><small>공고 ${[...(p.jd || "")].length.toLocaleString()}자</small></div><button class="btn sm quiet" type="button" data-pedit="${esc(p.id)}">수정</button><button class="btn sm quiet" type="button" data-pdel="${esc(p.id)}" aria-label="공고 빼기">✕</button></div>`).join("")}</div>` : ""}
-      ${state.pform ? postingFormHTML(state.pform, "pf") : ""}
+      ${state.pform ? postingFormHTML(state.pform, "pf") : `<button type="button" class="btn add-post" data-act="pf-new" ${jobs.length >= 4 ? "disabled" : ""}>＋ ${(d.postings || []).length ? "채용공고 하나 더 붙여넣기" : "채용공고 붙여넣기"}</button>`}
+      <p class="or-line">공고가 없으면 직무로 골라도 돼요</p>
+      <div class="chips">${Object.keys(JOBS).map(j => `<button type="button" class="chip ${d.jobs.includes(j) ? "on" : ""}" data-job="${esc(j)}" aria-pressed="${d.jobs.includes(j)}"><b>${esc(j)}</b><small>${esc(JOBS[j].desc)}</small></button>`).join("")}</div>
       <div class="custom-row"><input id="in-custom" data-k="custom" placeholder="다른 직무 직접 입력 (예: 상품기획 MD)" value="${esc(d.custom)}"></div>
       <details class="more" style="margin-top:12px"><summary>글자 수 제한 (선택)</summary><div>
         <div class="field" style="max-width:220px"><label for="in-limit">글자 수 제한 (공백 포함)</label><input id="in-limit" type="number" min="30" max="300" step="5" data-k="limit" value="${esc(d.limit)}"></div>
@@ -707,6 +856,7 @@ function renderInput(){
 function renderSentence(r, warns){
   const hits = warns.map(w => w.hit).filter(Boolean);
   const mark = t => { let h = esc(t); hits.forEach(x => { const ex = esc(x); h = h.split(ex).join(`<span class="bad">${ex}</span>`); }); return h; };
+  if (r.mode === "outline" && r.outline) return r.outline.split("\n").map(mark).join("<br>");
   if (r.edited != null) return mark(r.edited);
   return (r.segments || []).map(s => `<span class="sg" data-f="${esc((s.facts || []).join(" "))}">${mark(s.text)}</span>`).join("");
 }
@@ -722,12 +872,17 @@ function renderResult(busy){
     const facts = [...new Set((r.segments || []).flatMap(s => s.facts || []))];
     const editing = state.editing[j];
     return `<article class="card ${c.warns.length ? "has-warn" : ""} ${busy && busy.has(j) ? "busy" : ""} ${idx === state.mTab ? "m-on" : ""}" data-job="${esc(j)}" data-facts="${esc(r.edited != null ? "" : facts.join(" "))}">
-      <div class="card-h"><h4>${targetOf(exp, j).kind === "posting" ? `<span class="post-badge">공고 맞춤</span> ` : ""}${esc(j)}</h4><span class="len ${c.over ? "over" : ""}">${c.len}자 / ${exp.input.limit || 80}자</span></div>
-      ${editing ? `<textarea class="editor" data-edit="${esc(j)}" aria-label="${esc(j)} 문장 고치기">${esc(cardText(r))}</textarea>`
-                : `<p class="sentence" data-act="edit" title="눌러서 고치기">${renderSentence(r, c.warns)}</p>`}
+      <div class="card-h"><h4>${targetOf(exp, j).kind === "posting" ? `<span class="post-badge">공고 맞춤</span> ` : ""}${esc(j)}</h4><span class="len ${c.over ? "over" : ""}">${c.len}자 / ${limitOf(exp, r)}자</span></div>
+      ${editing ? `<textarea class="editor" data-edit="${esc(j)}" aria-label="${esc(j)} 문장 고치기" rows="${r.mode === "outline" ? 4 : 3}">${esc(activeText(r))}</textarea>`
+                : `<p class="sentence ${r.mode === "outline" ? "outline" : ""}" data-act="edit" title="눌러서 고치기">${renderSentence(r, c.warns)}</p>`}
+      ${isDemo || editing ? "" : `<div class="tools">
+        <div class="seg-toggle sm" role="group" aria-label="형식"><button type="button" data-act="fmt" data-fmt="prose" class="${r.mode === "outline" ? "" : "on"}">줄글</button><button type="button" data-act="fmt" data-fmt="outline" class="${r.mode === "outline" ? "on" : ""}">개요식</button></div>
+        <span class="len-ctl"><label>글자 수 <input type="number" class="len-in" min="20" max="400" step="10" value="${limitOf(exp, r)}" aria-label="글자 수"></label><button class="btn sm" type="button" data-act="resize">이 길이로</button></span>
+      </div>`}
       ${r.tags && r.tags.length && r.edited == null ? `<div class="tags">${r.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : ""}
       ${(r.keywords || []).length ? `<div class="kw">${keywordHTML(r)}</div>` : ""}
       ${r.reason ? `<div class="why"><b>왜 이렇게?</b> ${esc(r.reason)}</div>` : ""}
+      ${(r.history || []).length && !isDemo ? `<details class="hist"><summary>이전 버전 ${r.history.length}개</summary>${r.history.map((h, i) => `<div class="hist-row"><span>${esc(h)}</span><button class="btn sm quiet" type="button" data-act="hist-use" data-i="${i}">이걸로 되돌리기</button></div>`).join("")}</details>` : ""}
       ${editing ? `<div class="live-check">${c.warns.length ? `<p class="check bad-c">⚠ ${c.warns.map(w => esc(w.msg)).join(" · ")}</p>` : `<p class="check ok">✓ 숫자·역할 표현이 원문과 일치해요</p>`}</div>`
       : c.warns.length ? `<div class="warns" role="status"><p class="check bad-c">⚠ 확인이 필요한 곳 ${c.warns.length}개</p>${c.warns.map(w => `<p><b>${esc(w.msg)}</b><br>${esc(w.help)}</p>`).join("")}
           <div class="acts"><button class="btn sm" type="button" data-act="edit">직접 고치기</button>${isDemo ? "" : `<button class="btn sm" type="button" data-act="regen-fix">문제 빼고 다시 만들기</button>`}</div></div>`
@@ -736,11 +891,14 @@ function renderResult(busy){
         ${r.copiedAt ? `<span class="copied">✓ 복사함 ${new Date(r.copiedAt).toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit"})}</span>` : `<span></span>`}
         <div class="acts">
           ${editing ? `<button class="btn sm" type="button" data-act="done">다 고쳤어요</button>` : ""}
-          ${r.edited != null || editing ? `<button class="btn sm quiet" type="button" data-act="revert">원래대로</button>` : ""}
+          ${(r.edited != null || editing) && r.mode !== "outline" ? `<button class="btn sm quiet" type="button" data-act="revert">원래대로</button>` : ""}
           ${isDemo ? "" : `<button class="btn sm quiet" type="button" data-act="regen">다시 만들기</button>`}
+          ${isDemo ? "" : (vaultFind(exp.id, j, activeText(r)) ? `<button class="btn sm star on" type="button" data-act="star" title="창고에서 빼기">★ 창고에 있음</button>` : `<button class="btn sm star" type="button" data-act="star">☆ 창고에 넣기</button>`)}
           <button class="btn sm primary" type="button" data-act="copy">복사</button>
         </div>
-      </div></article>`;
+      </div>
+      ${state.askUse && state.askUse.job === j && state.askUse.expId === exp.id ? `<div class="ask-use"><span>창고에 넣었어요. <b>어디에 냈어요?</b></span><input id="use-to" value="${esc(state.askUse.prefill || "")}" placeholder="예) B사 마케팅" maxlength="40"><button class="btn sm primary" type="button" data-act="use-save">기록</button><button class="btn sm quiet" type="button" data-act="use-skip">건너뛰기</button></div>` : ""}
+      </article>`;
   }).join("");
   const addCard = !isDemo && exp.order.length < 4 ? `<div class="addcard ${state.rpform ? "open" : ""}">${state.rpform ? postingFormHTML(state.rpform, "rpf") : state.addOpen
       ? `<span style="font-size:14px">어떤 직무나 공고를 더 볼까요?</span><button class="btn sm" type="button" data-act="rpf-new">＋ 채용공고 붙여넣기</button><div class="chips">${remaining.map(j => `<button class="chip" type="button" data-add="${esc(j)}"><b>${esc(j)}</b></button>`).join("")}</div>
@@ -768,8 +926,9 @@ function renderResult(busy){
 }
 
 function render(busy){
-  if (state.view === "result") renderResult(busy); else renderInput();
-  renderDrawer();
+  if (state.view === "result") renderResult(busy);
+  else if (state.view === "vault") renderVault();
+  else renderInput();
 }
 
 /* ───────────── 7. 근거 하이라이트 ───────────── */
@@ -792,28 +951,91 @@ function bindHighlight(){
   });
 }
 
-/* ───────────── 8. 보관함 ───────────── */
-function renderDrawer(){
-  const layer = document.getElementById("drawer-layer");
-  if (!state.drawer) { if (layer) layer.remove(); return; }
-  const html = `<div class="drawer-bg" data-act="drawer-close"></div><aside class="drawer" aria-label="내 경험 보관함">
-    <div class="item-h"><h3>내 경험 보관함</h3><button class="btn sm quiet" type="button" data-act="drawer-close">닫기</button></div>
-    ${state.archive.length ? state.archive.map(x => `<div class="item">
+/* ───────────── 8. 내 창고 ─────────────
+   취준생 관점: 지원할 때마다 "경험 여러 개의 문장"을 한 벌로 꺼내 쓰고, 어디에 냈는지 기억해야 한다.
+   - 문장: 저장한 문장 스냅샷 (다시 만들기로 덮어써져도 남음). 대상별 필터·검색·여러 개 한꺼번에 복사
+   - 경험: 만들어둔 경험 다시 열기·삭제
+   - 제출 기록: 언제, 어디에, 어떤 문장을 냈는지 */
+const vaultFind = (expId, target, text) => state.vault.find(v => v.expId === expId && v.target === target && v.text === text);
+function vaultAdd(exp, target, text){
+  let v = vaultFind(exp.id, target, text);
+  if (!v) {
+    const t = targetOf(exp, target);
+    v = {id:"v" + Date.now() + Math.random().toString(36).slice(2, 6), text, expId:exp.id, expName:exp.input.name || "이름 없는 경험", target, kind:t.kind, company:t.company || "", savedAt:Date.now(), uses:[]};
+    state.vault.unshift(v); saveVault();
+  }
+  return v;
+}
+function lastUseText(v){ const u = (v.uses || []).filter(x => x.to); return u.length ? u[u.length - 1].to : ""; }
+function vaultLines(){
+  const q = state.vq.trim().toLowerCase();
+  return state.vault.filter(v => {
+    if (state.vfilter === "posting" && v.kind !== "posting") return false;
+    if (state.vfilter !== "all" && state.vfilter !== "posting" && v.target !== state.vfilter) return false;
+    if (!q) return true;
+    return [v.text, v.expName, v.target, v.company, ...(v.uses || []).map(u => u.to)].join(" ").toLowerCase().includes(q);
+  });
+}
+function vaultListHTML(){
+  const list = vaultLines();
+  if (!state.vault.length) return `<div class="empty">아직 창고가 비어 있어요.<br>결과 카드에서 <b>☆ 창고에 넣기</b>를 누르거나 <b>복사</b>하면 여기에 모여요.</div>`;
+  if (!list.length) return `<div class="empty">조건에 맞는 문장이 없어요.</div>`;
+  return list.map(v => {
+    const sel = state.vsel.includes(v.id);
+    const uses = (v.uses || []).length;
+    return `<div class="vrow ${sel ? "sel" : ""}">
+      <input type="checkbox" class="vchk" data-vsel="${esc(v.id)}" ${sel ? "checked" : ""} aria-label="선택">
+      <div class="vbody"><p class="vtext">${esc(v.text)}</p>
+        <div class="meta">${v.kind === "posting" ? `<span class="post-badge">공고</span> ` : ""}${esc(v.target)} · ${esc(v.expName)} · <span class="mono">${[...v.text].length}자</span>${uses ? ` · ${uses}번 씀${lastUseText(v) ? ` (최근: ${esc(lastUseText(v))})` : ""}` : ""}</div>
+        ${state.vAsk === v.id ? `<div class="ask-use"><span><b>어디에 냈어요?</b></span><input id="vuse-to" placeholder="예) B사 마케팅" maxlength="40"><button class="btn sm primary" type="button" data-vuse-save="${esc(v.id)}">기록</button><button class="btn sm quiet" type="button" data-act="vuse-skip">건너뛰기</button></div>` : ""}
+      </div>
+      <div class="vacts"><button class="btn sm primary" type="button" data-vcopy="${esc(v.id)}">복사</button>${findExp(v.expId) ? `<button class="btn sm quiet" type="button" data-open="${esc(v.expId)}">경험 열기</button>` : ""}<button class="btn sm quiet" type="button" data-vdel="${esc(v.id)}">빼기</button></div>
+    </div>`;
+  }).join("");
+}
+function selbarHTML(){
+  if (!state.vsel.length) return "";
+  return `<div class="selbar">${state.bulkAsk
+    ? `<span><b>${state.vsel.length}개 복사했어요.</b> 어디에 냈어요?</span><input id="bulk-to" placeholder="예) B사 마케팅" maxlength="40"><button class="btn sm primary" type="button" data-act="bulk-use-save">기록</button><button class="btn sm quiet" type="button" data-act="bulk-done">건너뛰기</button>`
+    : `<span><b>${state.vsel.length}개</b> 골랐어요 · 이력서 경력란 한 벌</span><button class="btn sm primary" type="button" data-act="bulk-copy">한꺼번에 복사</button><button class="btn sm quiet" type="button" data-act="bulk-clear">선택 해제</button>`}</div>`;
+}
+function renderVault(){
+  const tabs = [["lines", "문장", state.vault.length], ["exps", "경험", state.archive.length], ["log", "제출 기록", state.vault.reduce((n, v) => n + (v.uses || []).filter(u => u.to).length, 0)]];
+  const targets = [...new Set(state.vault.filter(v => v.kind !== "posting").map(v => v.target))];
+  let body = "";
+  if (state.vtab === "lines") {
+    body = `<div class="vbar"><input id="vq" type="search" placeholder="문장 · 경험 · 회사로 찾기" value="${esc(state.vq)}" aria-label="창고 검색">
+      <div class="fchips">${[["all", "전체"], ...targets.map(t => [t, t]), ...(state.vault.some(v => v.kind === "posting") ? [["posting", "공고 맞춤"]] : [])].map(([k, l]) => `<button type="button" class="fchip ${state.vfilter === k ? "on" : ""}" data-vfilter="${esc(k)}">${esc(l)}</button>`).join("")}</div></div>
+      <p class="vhint">이력서 경력란에 넣을 문장을 경험마다 하나씩 골라서 <b>한꺼번에 복사</b>하세요.</p>
+      <div id="vlist" class="vlist">${vaultListHTML()}</div>${selbarHTML()}`;
+  } else if (state.vtab === "exps") {
+    body = state.archive.length ? `<div class="vlist">${state.archive.map(x => `<div class="item">
       <div class="item-h"><button class="open" type="button" data-open="${esc(x.id)}">${esc(x.input.name || "이름 없는 경험")}</button>
         ${state.confirmDelete === x.id ? `<span style="display:flex;gap:4px"><button class="btn sm" type="button" data-del-yes="${esc(x.id)}">삭제</button><button class="btn sm quiet" type="button" data-act="del-no">취소</button></span>`
-          : `<button class="btn sm quiet" type="button" data-del="${esc(x.id)}" aria-label="삭제">삭제</button>`}</div>
-      <div class="tags">${x.order.map(j => `<span class="tag ${x.results[j] && x.results[j].copiedAt ? "cp" : ""}">${esc(j)}${x.results[j] && x.results[j].copiedAt ? " ✓" : ""}</span>`).join("")}</div>
-      <div class="meta">${new Date(x.updatedAt).toLocaleDateString("ko-KR", {month:"numeric", day:"numeric"})} 수정${state.confirmDelete === x.id ? " · 지우면 되돌릴 수 없어요" : ""}</div></div>`).join("")
-      : `<div class="empty">아직 저장된 경험이 없어요.<br>결과를 만들면 여기에 자동으로 모여요.</div>`}
-    <p class="privacy">✓ 표시는 복사한 직무예요. 보관함은 이 브라우저에만 있어요.</p></aside>`;
-  let el = layer;
-  if (!el) { el = document.createElement("div"); el.id = "drawer-layer"; document.body.appendChild(el); el.addEventListener("click", onClick); }
-  el.innerHTML = html;
+          : `<button class="btn sm quiet" type="button" data-del="${esc(x.id)}">삭제</button>`}</div>
+      <div class="tags">${x.order.map(j => `<span class="tag">${esc(j)}</span>`).join("")}</div>
+      <div class="meta">${x.input.period ? esc(x.input.period) + " · " : ""}창고 문장 ${state.vault.filter(v => v.expId === x.id).length}개 · ${new Date(x.updatedAt).toLocaleDateString("ko-KR", {month:"numeric", day:"numeric"})} 수정${state.confirmDelete === x.id ? " · 지워도 창고에 넣은 문장은 남아요" : ""}</div></div>`).join("")}</div>`
+      : `<div class="empty">아직 만든 경험이 없어요.</div>`;
+  } else {
+    const rows = state.vault.flatMap(v => (v.uses || []).filter(u => u.to).map(u => ({...u, v}))).sort((a, b) => b.at - a.at);
+    body = rows.length ? `<div class="vlist">${rows.map(r => `<div class="logrow"><span class="mono">${new Date(r.at).toLocaleDateString("ko-KR", {month:"numeric", day:"numeric"})}</span><b>${esc(r.to)}</b><span class="ltext">${esc(r.v.text)}</span><span class="meta">${esc(r.v.expName)} · ${esc(r.v.target)}</span></div>`).join("")}</div>`
+      : `<div class="empty">아직 기록이 없어요.<br>문장을 복사할 때 "어디에 냈어요?"에 회사 이름을 남기면 여기에 쌓여요.</div>`;
+  }
+  app.innerHTML = `<div class="rbar"><div class="left"><button class="btn quiet sm" type="button" data-act="vault-back">← 돌아가기</button><h1>내 창고</h1></div></div>
+    <div class="vtabs" role="tablist">${tabs.map(([k, l, n]) => `<button type="button" role="tab" class="${state.vtab === k ? "on" : ""}" data-vtab="${k}">${l} <span class="mono">${n}</span></button>`).join("")}</div>
+    <div class="vwrap">${body}</div>
+    <p class="privacy" style="text-align:center;margin-top:16px">창고는 이 브라우저에만 저장돼요. 브라우저 기록을 지우면 사라질 수 있어요.</p>`;
 }
-function updateCount(){ document.getElementById("archive-count").textContent = state.archive.length; }
+function openVault(){
+  if (state.view !== "vault") state.prevView = state.view;
+  state.view = "vault"; state.vsel = []; state.bulkAsk = false; state.vAsk = null;
+  render(); window.scrollTo({top:0});
+}
+function renderDrawer(){}
+function updateCount(){ document.getElementById("archive-count").textContent = state.vault.length; }
 
 function openExperience(id){
-  state.currentId = id; state.view = "result"; state.drawer = false; state.addOpen = false; state.mTab = 0; state.editing = {};
+  state.currentId = id; state.view = "result"; state.drawer = false; state.askUse = null; state.addOpen = false; state.mTab = 0; state.editing = {};
   if (id !== "demo") { store.set("current", id); }
   render(); window.scrollTo({top:0});
 }
@@ -852,16 +1074,18 @@ function lightUpdateInput(){
 }
 app.addEventListener("input", e => {
   const t = e.target;
+  if (t.id === "vq") { state.vq = t.value; const l = document.getElementById("vlist"); if (l) l.innerHTML = vaultListHTML(); return; }
   if (state.view === "input") {
     if (t.dataset.k) { state.draft[t.dataset.k] = t.dataset.k === "limit" ? Math.max(30, Math.min(300, parseInt(t.value, 10) || 80)) : t.value; }
-    if (t.dataset.pf && state.pform) { state.pform[t.dataset.pf] = t.value; return; }
+    if (t.dataset.pf && state.pform) { state.pform[t.dataset.pf] = t.value; lightUpdateInput(); return; }
     saveDraft(); lightUpdateInput();
   } else if (t.dataset.pf && state.rpform) { state.rpform[t.dataset.pf] = t.value;
   } else if (t.dataset.edit) {
     const exp = current(), j = t.dataset.edit, r = exp.results[j];
-    r.edited = t.value; saveArchiveIfReal(exp);
+    if (r.mode === "outline") r.outline = t.value; else r.edited = t.value;
+    saveArchiveIfReal(exp);
     const card = t.closest(".card"), c = checkCard(exp, r);
-    const len = card.querySelector(".len"); len.textContent = `${c.len}자 / ${exp.input.limit || 80}자`; len.classList.toggle("over", c.over);
+    const len = card.querySelector(".len"); len.textContent = `${c.len}자 / ${limitOf(exp, r)}자`; len.classList.toggle("over", c.over);
     let live = card.querySelector(".live-check");
     if (!live) { live = document.createElement("div"); live.className = "live-check"; t.after(live); }
     live.innerHTML = c.warns.length ? `<p class="check bad-c">⚠ ${c.warns.map(w => esc(w.msg)).join(" · ")}</p>` : `<p class="check ok">✓ 숫자·역할 표현이 원문과 일치해요</p>`;
@@ -877,7 +1101,7 @@ function postingError(f){
 function saveArchiveIfReal(exp){ if (exp.id !== "demo") { exp.updatedAt = Date.now(); saveArchive(); } }
 
 function onClick(e){
-  const t = e.target.closest("button, [data-act], [data-open], [data-del], [data-del-yes]");
+  const t = e.target.closest("button, [data-act], [data-open], [data-del], [data-del-yes], [data-vsel]");
   if (!t) return;
   const card = t.closest(".card"); const job = card && card.dataset.job;
   const exp = state.view === "result" ? current() : null;
@@ -894,7 +1118,17 @@ function onClick(e){
   if (t.dataset.open) return openExperience(t.dataset.open);
   if (t.dataset.pedit) { const p = state.draft.postings.find(x => x.id === t.dataset.pedit); state.pform = {...p}; return render(); }
   if (t.dataset.pdel) { state.draft.postings = state.draft.postings.filter(x => x.id !== t.dataset.pdel); saveDraft(); return render(); }
-  if (t.dataset.del) { state.confirmDelete = t.dataset.del; return renderDrawer(); }
+  if (t.dataset.del) { state.confirmDelete = t.dataset.del; return render(); }
+  if (t.dataset.vtab) { state.vtab = t.dataset.vtab; state.confirmDelete = null; return render(); }
+  if (t.dataset.vfilter) { state.vfilter = t.dataset.vfilter; return render(); }
+  if (t.dataset.vsel) { const id = t.dataset.vsel; state.vsel = state.vsel.includes(id) ? state.vsel.filter(x => x !== id) : [...state.vsel, id]; state.bulkAsk = false; return render(); }
+  if (t.dataset.vdel) { state.vault = state.vault.filter(v => v.id !== t.dataset.vdel); state.vsel = state.vsel.filter(x => x !== t.dataset.vdel); saveVault(); toast("창고에서 뺐어요"); return render(); }
+  if (t.dataset.vcopy) {
+    const v = state.vault.find(x => x.id === t.dataset.vcopy);
+    copyText(v.text).then(ok => { if (!ok) return toast("복사가 막혀 있어요"); v.uses = [...(v.uses || []), {to:"", at:Date.now()}]; saveVault(); state.vAsk = v.id; render(); const i = document.getElementById("vuse-to"); i && i.focus(); });
+    return;
+  }
+  if (t.dataset.vuseSave) { const v = state.vault.find(x => x.id === t.dataset.vuseSave); const to = (document.getElementById("vuse-to").value || "").trim(); if (to && v.uses.length) v.uses[v.uses.length - 1].to = to; saveVault(); state.vAsk = null; toast(to ? "제출 기록에 남겼어요" : "복사했어요"); return render(); }
   if (t.dataset.delYes) {
     state.archive = state.archive.filter(x => x.id !== t.dataset.delYes); saveArchive();
     if (state.draft.editingId === t.dataset.delYes) { state.draft.editingId = null; saveDraft(); }
@@ -916,13 +1150,46 @@ function onClick(e){
       state.pform = null;
       state.view = "input"; state.error = null; return render();
     }
-    case "new": state.draft = blankDraft(); saveDraft(); state.view = "input"; state.currentId = null; state.error = null; render(); window.scrollTo({top:0}); return toast(exp && exp.id !== "demo" ? "지금 경험은 보관함에 저장돼 있어요" : "새 경험을 넣어주세요");
+    case "new": state.draft = blankDraft(); saveDraft(); state.view = "input"; state.currentId = null; state.error = null; render(); window.scrollTo({top:0}); return toast(exp && exp.id !== "demo" ? "지금 경험은 내 창고 › 경험에 있어요" : "새 경험을 넣어주세요");
     case "drawer-close": state.drawer = false; state.confirmDelete = null; return renderDrawer();
-    case "del-no": state.confirmDelete = null; return renderDrawer();
+    case "del-no": state.confirmDelete = null; return render();
+    case "vault-back": state.view = state.prevView === "result" && current() ? "result" : "input"; return render();
+    case "vuse-skip": state.vAsk = null; return render();
+    case "bulk-clear": state.vsel = []; state.bulkAsk = false; return render();
+    case "bulk-copy": {
+      const items = vaultLines().filter(v => state.vsel.includes(v.id));
+      copyText(items.map(v => v.text.includes("\n") ? v.text : "- " + v.text).join("\n")).then(ok => {
+        if (!ok) return toast("복사가 막혀 있어요");
+        const at = Date.now(); items.forEach(v => v.uses = [...(v.uses || []), {to:"", at}]); saveVault();
+        state.bulkAsk = true; render(); const i = document.getElementById("bulk-to"); i && i.focus();
+      });
+      return;
+    }
+    case "bulk-use-save": {
+      const to = (document.getElementById("bulk-to").value || "").trim();
+      if (to) state.vault.filter(v => state.vsel.includes(v.id)).forEach(v => { if (v.uses.length) v.uses[v.uses.length - 1].to = to; });
+      saveVault(); state.vsel = []; state.bulkAsk = false; toast(to ? "제출 기록에 남겼어요" : "복사했어요"); return render();
+    }
+    case "bulk-done": state.vsel = []; state.bulkAsk = false; return render();
+    case "star": {
+      const text = activeText(exp.results[job]); const v = vaultFind(exp.id, job, text);
+      if (v) { state.vault = state.vault.filter(x => x !== v); saveVault(); toast("창고에서 뺐어요"); }
+      else { vaultAdd(exp, job, text); toast("창고에 넣었어요"); }
+      return render();
+    }
+    case "hist-use": {
+      const r = exp.results[job], i = +t.dataset.i, old = r.history[i], cur = cardText(r);
+      r.history = [cur, ...r.history.filter((_, k) => k !== i)].slice(0, 5); r.edited = old; saveArchiveIfReal(exp); toast("이전 버전으로 되돌렸어요"); return render();
+    }
+    case "use-save": {
+      const v = state.vault.find(x => x.id === state.askUse.vid); const to = (document.getElementById("use-to").value || "").trim();
+      if (v && to && v.uses.length) v.uses[v.uses.length - 1].to = to; saveVault(); state.askUse = null; toast(to ? "제출 기록에 남겼어요" : "창고에 넣었어요"); return render();
+    }
+    case "use-skip": state.askUse = null; return render();
     case "add-open": state.addOpen = true; return render();
     case "add-close": state.addOpen = false; return render();
     case "pf-new": state.pform = {id:null, company:"", title:"", jd:""}; render(); { const el = document.getElementById("pf-company"); el && el.focus(); } return;
-    case "pf-cancel": state.pform = null; return render();
+    case "pf-cancel": state.pform = null; state.pformHidden = true; return render();
     case "pf-save": {
       const f = state.pform, err = postingError(f); if (err) return toast(err);
       const d = state.draft; d.postings = d.postings || [];
@@ -942,24 +1209,40 @@ function onClick(e){
     }
     case "add-custom": { const v = (document.getElementById("add-custom").value || "").trim(); if (!v) return; if (exp.order.includes(v)) return toast("이미 있는 직무예요"); state.addOpen = false; return regenerate([v]); }
     case "edit": if (job && !state.editing[job]) { state.editing[job] = true; render(); } return;
-    case "done": state.editing[job] = false; { const r = exp.results[job]; if (r.edited != null && r.edited.trim() === (r.segments || []).map(s => s.text).join("").trim()) r.edited = null; saveArchiveIfReal(exp); } return render();
+    case "done": state.editing[job] = false; { const r = exp.results[job]; if (r.mode !== "outline" && r.edited != null && r.edited.trim() === (r.segments || []).map(s => s.text).join("").trim()) r.edited = null; saveArchiveIfReal(exp); } return render();
     case "revert": exp.results[job].edited = null; state.editing[job] = false; saveArchiveIfReal(exp); return render();
     case "regen": return regenerate([job]);
+    case "fmt": {
+      const r = exp.results[job];
+      if (t.dataset.fmt === "prose") { r.mode = "prose"; saveArchiveIfReal(exp); return render(); }
+      if (r.outline && r.outlineOf === cardText(r)) { r.mode = "outline"; saveArchiveIfReal(exp); return render(); }
+      return rewriteCard(job, "outline");
+    }
+    case "resize": {
+      const n = parseInt(card.querySelector(".len-in").value, 10);
+      if (!(n >= 20 && n <= 400)) return toast("글자 수는 20~400 사이로 써주세요");
+      return rewriteCard(job, {resize:n});
+    }
     case "regen-fix": { const c = checkCard(exp, exp.results[job]); return regenerate([job], {[job]: c.warns.map(w => w.msg)}); }
     case "copy": {
       const r = exp.results[job];
-      const text = state.editing[job] ? (card.querySelector(".editor").value || "") : cardText(r);
+      const text = state.editing[job] ? (card.querySelector(".editor").value || "") : activeText(r);
       copyText(text).then(ok => {
         if (!ok) return toast("복사가 막혀 있어요. 문장을 눌러 직접 선택해 복사해주세요");
-        r.copiedAt = Date.now(); state.editing[job] = false; saveArchiveIfReal(exp); render(); toast(`${job} 문장을 복사했어요`);
+        r.copiedAt = Date.now(); state.editing[job] = false; saveArchiveIfReal(exp);
+        if (exp.id !== "demo") { // 복사 = 이 문장을 썼다는 뜻 → 창고에 넣고 어디에 냈는지 묻기
+          const v = vaultAdd(exp, job, text); v.uses = [...(v.uses || []), {to:"", at:Date.now()}]; saveVault();
+          const tg = targetOf(exp, job); state.askUse = {expId:exp.id, job, vid:v.id, prefill: tg.kind === "posting" ? job : ""};
+        }
+        render(); toast(`${job} 문장을 복사했어요`);
+        const i = document.getElementById("use-to"); i && i.focus();
       });
       return;
     }
   }
 }
 app.addEventListener("click", onClick);
-document.getElementById("open-archive").addEventListener("click", () => { state.drawer = true; renderDrawer(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && state.drawer) { state.drawer = false; renderDrawer(); } });
+document.getElementById("open-archive").addEventListener("click", openVault);
 
 // current()는 예시 결과도 찾을 수 있게
 function current(){ return findExp(state.currentId); }
@@ -1016,6 +1299,7 @@ function showDupModal(){
   m.innerHTML = `<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="dup-title"><div class="box dup">
     <h3 id="dup-title">먼저 복제해서 내 계정으로 가져가 주세요</h3>
     <p class="dup-sub">이 링크는 <b>보기 전용</b>이라 여기서는 AI가 돌지 않아요. 복제한 내 사본에서는 <b>내 claude.ai 계정의 Claude</b>로 바로 만들 수 있어요. API 키도, 비용 설정도 필요 없어요.</p>
+    <p class="dup-need">✔ <b>claude.ai 로그인이 필요해요.</b> 계정이 없으면 claude.ai에서 먼저 가입해주세요. 쓰는 만큼 내 계정 사용량에서 나가요.</p>
     <ol class="dup-steps">
       <li><b>페이지 위쪽 메뉴에서 '복제'</b>를 눌러요</li>
       <li>내 계정에 생긴 <b>사본이 열리면</b> 그대로 쓰면 돼요</li>
