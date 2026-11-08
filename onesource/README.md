@@ -76,3 +76,11 @@ Claude Code에서 올린 아티팩트는 **다른 계정이 열면 Claude 연결
 3. 만들어진 아티팩트에서 공개(Publish) → 링크 공유
 
 페이지는 `window.claude.complete`(채팅 아티팩트)와 `claude.use("sample")`(Claude Code 아티팩트)를 둘 다 지원한다.
+
+## 다른 사람에게 쓰게 하기: "복제" 방식 (확정)
+
+- Claude Code에서 올린 아티팩트는 **주인이 아닌 계정이 열면 AI 연결을 받지 못한다** (개인 계정으로도 확인: `Claude: 없음 · 권한: 확인 불가 · 377ms`).
+- 대신 **복제**하면 복제한 사람이 주인이 되어 자기 Claude로 쓸 수 있다.
+- 원본 링크를 남이 열면 맨 위에 "복제해서 내 계정으로 가져가면 바로 쓸 수 있어요" 안내가 뜬다.
+- 복제본 주인이 열면 "내 사본에 이름 붙이기 · OneSource ( 이름 )" 버튼이 뜬다. 누르면 페이지가 제목을 바꿔 스스로 다시 저장한다 (`artifact` + `user` 기능).
+- 이를 위해 빌드 때 페이지 소스 전체를 `SELF_T`에 넣는다: `prototype/index.html`(소스) → `./onesource/build-pages.sh` → `prototype/publish.html`(올리는 파일), `docs/index.html`(Pages).
