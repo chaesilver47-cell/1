@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>원소스 와이어프레임</title>
+<style>
+:root{
+  --bg:#f4f4f2; --paper:#fff; --ink:#222; --sub:#777; --line:#bbb; --box:#e8e8e6;
+  --pin:#e0533d; --hl:#ffe98a; --hl2:#ffd23f; --warn:#e0533d; --ok:#3a8a4f;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1b1b1a; --paper:#262625; --ink:#eee; --sub:#9a9a96; --line:#555; --box:#333331;
+    --hl:#6b5a12; --hl2:#8a7313;
+  }
+}
+:root[data-theme="dark"]{--bg:#1b1b1a; --paper:#262625; --ink:#eee; --sub:#9a9a96; --line:#555; --box:#333331; --hl:#6b5a12; --hl2:#8a7313;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+header.top{padding:16px;border-bottom:1px solid var(--line);background:var(--paper)}
+header.top h1{margin:0 0 4px;font-size:18px}
+header.top p{margin:0;color:var(--sub);font-size:13px}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+nav.tabs button{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 10px;border-radius:999px;font:inherit;font-size:13px;cursor:pointer}
+nav.tabs button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;padding:16px;max-width:1400px;margin:0 auto}
+@media (max-width:900px){main{grid-template-columns:1fr}.notes{position:static}}
+.frame{background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.chrome{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--sub)}
+.chrome i{width:10px;height:10px;border-radius:50%;background:var(--box);display:inline-block}
+.chrome span{margin-left:8px}
+.screen{display:none;padding:18px;position:relative}
+.screen.on{display:block}
+.notes{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;align-self:start;position:sticky;top:60px}
+.notes h2{font-size:15px;margin:0 0 4px}
+.notes .why{font-size:12px;color:var(--sub);margin:0 0 10px}
+.notes ol{margin:0;padding:0;list-style:none}
+.notes li{display:flex;gap:8px;margin:0 0 10px;font-size:13px}
+.notes li b{display:block}
+.pin{flex:none;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--pin);color:#fff;font-size:11px;font-weight:700;vertical-align:middle}
+.pin.abs{position:absolute;transform:translate(-50%,-50%);box-shadow:0 0 0 2px var(--paper)}
+/* wire primitives */
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.col{display:flex;flex-direction:column;gap:8px}
+.lbl{font-size:12px;color:var(--sub);margin-bottom:3px}
+.in{border:1.5px solid var(--line);border-radius:6px;padding:7px 9px;color:var(--sub);background:var(--paper);min-height:34px;font-size:13px}
+.in.tall{min-height:90px}
+.btn{display:inline-block;border:1.5px solid var(--ink);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;background:var(--paper);color:var(--ink);font-family:inherit}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.ghost{border-color:var(--line);color:var(--sub)}
+.btn.sm{padding:3px 8px;font-size:12px}
+.chip{display:inline-flex;flex-direction:column;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;min-width:130px}
+.chip small{color:var(--sub);font-size:11px}
+.chip.sel{border-color:var(--ink);background:var(--box)}
+.chip.sel::before{content:"✓ ";font-weight:700}
+.sec{border:1.5px dashed var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
+.sec h3{margin:0 0 8px;font-size:14px}
+.fold{color:var(--sub);font-size:13px;border-top:1px dashed var(--line);padding-top:8px;margin-top:8px}
+.gauge{display:flex;gap:3px;width:140px}
+.gauge i{flex:1;height:8px;border-radius:2px;background:var(--box)}
+.gauge i.f{background:var(--ink)}
+.hint{font-size:12px;color:var(--sub)}
+.toggle{display:inline-flex;border:1.5px solid var(--line);border-radius:6px;overflow:hidden;font-size:12px}
+.toggle span{padding:4px 10px}
+.toggle span.on{background:var(--ink);color:var(--paper)}
+/* result */
+.work{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px}
+@media (max-width:700px){.work{grid-template-columns:1fr}}
+.src{border:1.5px solid var(--line);border-radius:8px;padding:10px;align-self:start;font-size:13px}
+.src h4{margin:0 0 6px;font-size:13px}
+.fact{display:block;padding:3px 6px;border-radius:4px;margin:2px 0;transition:background .15s}
+.fact em{font-style:normal;color:var(--sub);font-size:11px;margin-right:4px}
+.fact.lit{background:var(--hl)}
+.fact.strong{background:var(--hl2);font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:1000px){.cards{grid-template-columns:1fr}}
+.card{border:1.5px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:7px;cursor:default}
+.card:hover{border-color:var(--ink)}
+.card h5{margin:0;font-size:13px}
+.sent{font-size:15px;font-weight:600;line-height:1.45;border-radius:4px}
+.seg{border-radius:3px;cursor:help}
+.seg:hover{background:var(--hl2)}
+.seg.bad{text-decoration:underline wavy var(--warn);text-underline-offset:3px}
+.meta{font-size:11px;color:var(--sub)}
+.tags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:1px 7px}
+.why{font-size:12px;background:var(--box);border-radius:6px;padding:5px 8px}
+.check{font-size:12px}
+.check.ok{color:var(--ok)}
+.check.bad{color:var(--warn);font-weight:600}
+.warnbox{border:1.5px solid var(--warn);border-radius:6px;padding:7px 9px;font-size:12px}
+.warnbox .row{margin-top:6px}
+.editing{outline:2px solid var(--ink);outline-offset:2px;background:var(--paper)}
+.banner{border:1.5px dashed var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:10px}
+.copied{font-size:11px;color:var(--ok)}
+/* overlay / drawer */
+.dim{position:relative}
+.dim::after{content:"";position:absolute;inset:0;background:rgba(128,128,128,.35);border-radius:8px}
+.overlay{position:absolute;left:50%;top:150px;transform:translateX(-50%);width:min(360px,90%);background:var(--paper);border:1.5px solid var(--ink);border-radius:10px;padding:16px;z-index:2}
+.steps{list-style:none;padding:0;margin:8px 0 0}
+.steps li{padding:4px 0;font-size:13px;color:var(--sub)}
+.steps li.done{color:var(--ink)}
+.steps li.done::before{content:"✓ "}
+.steps li.now{color:var(--ink);font-weight:700}
+.steps li.now::before{content:"⟳ "}
+.drawer{position:absolute;right:0;top:0;bottom:0;width:min(300px,85%);background:var(--paper);border-left:1.5px solid var(--ink);padding:14px;z-index:2}
+.item{border:1.5px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px;cursor:pointer}
+.item:hover{border-color:var(--ink)}
+.phone{width:300px;max-width:100%;margin:0 auto;border:2px solid var(--ink);border-radius:24px;padding:14px 12px;min-height:560px}
+.mtabs{display:flex;border-bottom:1.5px solid var(--line);margin:8px 0;font-size:12px}
+.mtabs span{flex:1;text-align:center;padding:6px 0}
+.mtabs span.on{border-bottom:2.5px solid var(--ink);font-weight:700}
+.src.mini{font-size:12px}
+.note-inline{font-size:11px;color:var(--pin);margin-top:4px}
+footer{padding:16px;text-align:center;color:var(--sub);font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>원소스 와이어프레임 <small style="font-weight:400;color:var(--sub)">· 3단계 · lo-fi</small></h1>
+  <p>회색 상자는 "무엇이 어디에 있는지"만 보여주는 자리표시야. 색이나 폰트는 아직 신경 안 썼어. 버튼 몇 개는 진짜로 눌러져 (직무별로 만들기, ← 입력 수정, 📂 보관함).</p>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-s="input" class="on">① 입력 화면</button>
+  <button data-s="loading">② 생성 중 · 에러</button>
+  <button data-s="result">③ 결과 작업대</button>
+  <button data-s="warn">④ 경고 · 직접 수정</button>
+  <button data-s="archive">⑤ 경험 보관함</button>
+  <button data-s="mobile">⑥ 모바일</button>
+</nav>
+
+<main>
+<div class="frame">
+  <div class="chrome"><i></i><i></i><i></i><span id="url">claude.ai/artifact/onesource</span></div>
+
+  <!-- ① 입력 -->
+  <section class="screen on" id="s-input">
+    <div class="row between" style="margin-bottom:14px;position:relative">
+      <div><b style="font-size:17px">원소스</b> <span class="hint">경험 1개 → 직무별 이력서 1~2줄</span></div>
+      <div class="row"><span class="btn ghost sm" data-go="filled">예시로 채워보기</span><span class="btn sm" data-go="archive">📂 보관함 3</span></div>
+      <span class="pin abs" style="left:2px;top:0">1</span>
+      <span class="pin abs" style="right:0;top:0">2</span>
+    </div>
+
+    <div class="sec" style="position:relative">
+      <span class="pin abs" style="left:0;top:0">3</span>
+      <div class="row between"><h3>1. 경험 넣기</h3><div class="toggle"><span class="on">항목별로 쓰기</span><span>통째로 붙여넣기</span></div></div>
+      <div class="row" style="align-items:flex-start">
+        <div style="flex:2;min-width:200px"><div class="lbl">활동명 *</div><div class="in" id="f-name">예) 교내 마케팅 공모전</div></div>
+        <div style="flex:1;min-width:120px"><div class="lbl">내 역할 *</div><div class="in" id="f-role">예) 팀장</div></div>
+        <div style="flex:1;min-width:120px"><div class="lbl">기간</div><div class="in">2024.03 ~ 05</div></div>
+      </div>
+      <div style="margin-top:8px"><div class="lbl">한 일 * <span class="hint">· 한 줄에 하나씩 쓰면 AI가 더 잘 골라요</span></div><div class="in tall" id="f-did">예) SNS 콘텐츠 20건 기획·제작<br>예) 학교 행정 부서와 일정 조율</div></div>
+      <div style="margin-top:8px"><div class="lbl">성과 <span class="hint">· 숫자가 있으면 꼭 써주세요</span></div><div class="in" id="f-res">예) 팔로워 참여율 15% 증가</div></div>
+      <div class="fold">＋ 사용 툴 · 문제 해결 과정 (선택)</div>
+      <div class="row between" style="margin-top:10px;position:relative">
+        <div class="row"><span class="hint">재료</span><div class="gauge" id="gauge"><i class="f"></i><i></i><i></i></div><span class="hint" id="gauge-t">사실 1개 · 직무별로 비슷하게 나올 수 있어요</span></div>
+        <span class="pin abs" style="left:-6px;top:50%">4</span>
+      </div>
+      <div class="hint" style="margin-top:6px">🔒 회사·거래처 이름은 'A사'처럼 바꿔도 돼요. 입력한 내용은 이 브라우저에만 저장돼요.</div>
+    </div>
+
+    <div class="sec" style="position:relative">
+      <span class="pin abs" style="left:0;top:0">5</span>
+      <h3>2. 지원 직무 고르기 <span class="hint">· 2개 이상</span></h3>
+      <div class="row" id="chips">
+        <span class="chip">마케팅<small>대상자 반응·콘텐츠 성과</small></span>
+        <span class="chip">서비스기획·PM<small>문제 정의·일정·협업 조율</small></span>
+        <span class="chip">영업관리<small>관계 구축·숫자 성과</small></span>
+        <span class="chip">인사<small>조율·구성원 이해</small></span>
+        <span class="chip" style="border-style:dashed">＋ 직접 입력<small>다른 직무</small></span>
+      </div>
+      <div class="fold">＋ 채용공고 붙여넣기 (선택) · 글자 수 제한: 80자</div>
+    </div>
+
+    <div class="row between" style="position:relative">
+      <span class="hint" id="cta-hint">필수 칸 3개와 직무 2개를 채우면 버튼이 켜져요</span>
+      <span class="btn primary" id="cta" style="opacity:.4">직무별로 만들기 →</span>
+      <span class="pin abs" style="right:0;top:-6px">6</span>
+    </div>
+  </section>
+
+  <!-- ② 로딩/에러 -->
+  <section class="screen" id="s-loading">
+    <div class="dim" style="min-height:420px;padding:8px">
+      <div class="sec"><h3>1. 경험 넣기</h3><div class="in">교내 마케팅 공모전 · 팀장</div><div class="in tall" style="margin-top:6px">SNS 콘텐츠 20건 기획·제작 …</div></div>
+      <div class="sec"><h3>2. 지원 직무</h3><div class="row"><span class="chip sel">마케팅</span><span class="chip sel">서비스기획·PM</span><span class="chip sel">영업관리</span></div></div>
+    </div>
+    <div class="overlay">
+      <b>직무별로 만드는 중… <span class="pin">1</span></b>
+      <ul class="steps">
+        <li class="done">직무별 핵심 역량 파악</li>
+        <li class="done">앞세울 사실 고르기</li>
+        <li class="now">1~2줄로 다듬기</li>
+        <li>원문과 대조하기</li>
+      </ul>
+    </div>
+    <div class="warnbox" style="margin-top:14px;position:relative">
+      <span class="pin abs" style="left:0;top:0">2</span>
+      <b>[에러일 때]</b> 만들다가 문제가 생겼어요. 입력한 내용은 그대로 있어요. <span class="btn sm">다시 시도</span>
+    </div>
+    <div class="warnbox" style="margin-top:8px;position:relative;border-style:dashed">
+      <span class="pin abs" style="left:0;top:0">3</span>
+      <b>[처음 한 번]</b> claude.ai가 "이 페이지가 Claude를 사용해도 될까요?"라고 물어봐요 → 허용
+    </div>
+  </section>
+
+  <!-- ③ 결과 -->
+  <section class="screen" id="s-result">
+    <div class="row between" style="margin-bottom:10px;position:relative">
+      <span class="pin abs" style="left:0;top:0">1</span>
+      <div class="row"><span class="btn ghost sm" data-go="input">← 입력 수정</span><b>교내 마케팅 공모전</b></div>
+      <div class="row"><span class="btn sm">＋ 직무 추가</span><span class="btn sm">새 경험</span><span class="btn sm" data-go="archive">📂</span></div>
+    </div>
+    <div class="work">
+      <div class="src" style="position:relative" id="src">
+        <span class="pin abs" style="left:0;top:0">2</span>
+        <h4>원문 <span class="hint">· 카드에 마우스를 올려봐</span></h4>
+        <span class="fact" data-f="F1"><em>F1</em>5인 팀 구성, 팀장</span>
+        <span class="fact" data-f="F2"><em>F2</em>SNS 콘텐츠 20건 기획·제작</span>
+        <span class="fact" data-f="F3"><em>F3</em>팔로워 참여율 15% 증가</span>
+        <span class="fact" data-f="F4"><em>F4</em>학교 행정 부서 조율</span>
+        <span class="fact" data-f="F5"><em>F5</em>3주 캠페인 일정 준수 완료</span>
+        <span class="fact" data-f="F6"><em>F6</em>협찬처 10곳 직접 섭외</span>
+        <span class="fact" data-f="F7"><em>F7</em>캠페인 예산 확보</span>
+      </div>
+      <div>
+        <div class="cards" style="position:relative">
+          <span class="pin abs" style="left:0;top:0">3</span>
+          <div class="card" data-facts="F2 F3">
+            <div class="row between"><h5>마케팅</h5><span class="meta">33자 / 80자</span></div>
+            <div class="sent"><span class="seg" data-f="F2">SNS 콘텐츠 20건 기획·제작으로</span> <span class="seg" data-f="F3">팔로워 참여율 15% 향상</span></div>
+            <div class="tags"><span class="tag">콘텐츠 20건</span><span class="tag">참여율 15%</span></div>
+            <div class="why">💡 마케팅은 콘텐츠 실행력과 대상자 반응을 봐서, 콘텐츠 건수와 참여율을 앞에 뒀어요</div>
+            <div class="row between"><span class="check ok">✓ 숫자·역할 표현 원문과 일치</span><span class="row"><span class="btn sm ghost">다시</span><span class="btn sm copy">복사</span></span></div>
+          </div>
+          <div class="card" data-facts="F1 F4 F5">
+            <div class="row between"><h5>서비스기획·PM</h5><span class="meta">38자 / 80자</span></div>
+            <div class="sent"><span class="seg" data-f="F1">5인 팀을 이끌며</span> <span class="seg" data-f="F4">학교 행정 부서와 조율해</span> <span class="seg" data-f="F5">3주 캠페인 일정 내 완료</span></div>
+            <div class="tags"><span class="tag">5인 팀</span><span class="tag">행정 조율</span><span class="tag">3주 일정</span></div>
+            <div class="why">💡 기획은 일정과 이해관계자 조율을 봐서, 성과 수치보다 진행 과정을 앞에 뒀어요</div>
+            <div class="row between"><span class="check ok">✓ 숫자·역할 표현 원문과 일치</span><span class="row"><span class="btn sm ghost">다시</span><span class="btn sm copy">복사</span></span></div>
+          </div>
+          <div class="card" data-facts="F6 F7">
+            <div class="row between"><h5>영업관리</h5><span class="meta">27자 / 80자</span></div>
+            <div class="sent"><span class="seg" data-f="F6">협찬처 10곳을 직접 섭외해</span> <span class="seg" data-f="F7">캠페인 예산 확보</span></div>
+            <div class="tags"><span class="tag">협찬 10곳</span><span class="tag">예산 확보</span></div>
+            <div class="why">💡 영업관리는 외부 관계 구축과 숫자 성과를 봐서, 섭외 건수와 예산 확보를 앞에 뒀어요</div>
+            <div class="row between"><span class="check ok">✓ 숫자·역할 표현 원문과 일치</span><span class="row"><span class="btn sm ghost">다시</span><span class="btn sm copy">복사</span></span></div>
+          </div>
+          <div class="card" style="border-style:dashed;align-items:center;justify-content:center;color:var(--sub);min-height:120px">＋ 직무 추가</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ 경고·수정 -->
+  <section class="screen" id="s-warn">
+    <div class="banner" style="position:relative"><span class="pin abs" style="left:0;top:0">4</span>💬 [세 문장이 비슷할 때만] 직무별 차이가 작아요. 성과나 한 일을 1~2개 더 넣으면 차이가 커져요. <span class="btn sm ghost" data-go="input">입력 보강하기</span></div>
+    <div class="work">
+      <div class="src">
+        <h4>원문</h4>
+        <span class="fact"><em>F1</em>5인 팀 구성, 팀장</span>
+        <span class="fact"><em>F2</em>SNS 콘텐츠 20건 기획·제작</span>
+        <span class="fact"><em>F3</em>팔로워 참여율 15% 증가</span>
+        <span class="fact lit"><em>F6</em>협찬처 10곳 직접 섭외</span>
+        <span class="fact lit"><em>F7</em>캠페인 예산 확보</span>
+        <div class="note-inline">원문 어디에도 '30%'·'매출'이 없음</div>
+      </div>
+      <div class="cards">
+        <div class="card" style="border-color:var(--warn);position:relative">
+          <span class="pin abs" style="left:0;top:0">1</span>
+          <div class="row between"><h5>영업관리</h5><span class="meta">35자 / 80자</span></div>
+          <div class="sent"><span class="seg">협찬처 10곳을 직접 섭외해</span> <span class="seg bad">협찬 매출 30% 증가</span></div>
+          <div class="check bad">⚠️ 원문에 없는 내용 1개</div>
+          <div class="warnbox" style="position:relative">
+            <span class="pin abs" style="right:0;top:0">2</span>
+            <b>원문에 없는 숫자 '30%'</b><br><span class="hint">원문에서 '30'을 찾지 못했어요. 직접 쓴 게 아니라면 지워주세요.</span>
+            <div class="row"><span class="btn sm">이 부분 지우기</span><span class="btn sm ghost">직접 고치기</span><span class="btn sm ghost">이 직무만 다시</span></div>
+          </div>
+        </div>
+        <div class="card" style="position:relative">
+          <span class="pin abs" style="left:0;top:0">3</span>
+          <div class="row between"><h5>마케팅 <span class="hint">· 수정 중</span></h5><span class="meta" style="color:var(--warn)">84자 / 80자</span></div>
+          <div class="sent editing" contenteditable="true">SNS 콘텐츠 20건을 주도적으로 기획·제작해 팔로워 참여율 15% 향상</div>
+          <div class="check bad">⚠️ 원문보다 강한 역할 표현 '주도'</div>
+          <div class="hint">입력할 때마다 글자 수와 검사가 다시 돌아가요</div>
+          <div class="row between"><span></span><span class="row"><span class="btn sm ghost">원래대로</span><span class="btn sm">복사</span></span></div>
+        </div>
+        <div class="card">
+          <div class="row between"><h5>서비스기획·PM</h5><span class="meta">38자 / 80자</span></div>
+          <div class="sent">5인 팀을 이끌며 학교 행정 부서와 조율해 3주 캠페인 일정 내 완료</div>
+          <div class="row between"><span class="check ok">✓ 원문과 일치</span><span class="row"><span class="copied">✓ 복사함 23:14</span><span class="btn sm">복사</span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑤ 보관함 -->
+  <section class="screen" id="s-archive">
+    <div class="dim" style="min-height:440px;padding:8px">
+      <div class="row between"><b>원소스</b><span class="btn sm">📂 보관함 3</span></div>
+      <div class="sec" style="margin-top:12px"><h3>1. 경험 넣기</h3><div class="in"></div><div class="in tall" style="margin-top:6px"></div></div>
+      <div class="sec"><h3>2. 지원 직무</h3></div>
+    </div>
+    <div class="drawer">
+      <div class="row between" style="margin-bottom:10px"><b>📂 내 경험 보관함 <span class="pin">1</span></b><span class="btn sm ghost" data-go="input">닫기</span></div>
+      <div class="item" data-go="result" style="position:relative">
+        <span class="pin abs" style="right:0;top:0">2</span>
+        <b>교내 마케팅 공모전</b><div class="tags" style="margin:4px 0"><span class="tag">마케팅 ✓</span><span class="tag">기획</span><span class="tag">영업</span></div><div class="meta">10/14 · 마케팅 버전 복사함</div>
+      </div>
+      <div class="item"><b>드럭스토어 아르바이트</b><div class="tags" style="margin:4px 0"><span class="tag">영업</span><span class="tag">인사</span></div><div class="meta">10/12</div></div>
+      <div class="item"><b>학과 축제 기획단</b><div class="tags" style="margin:4px 0"><span class="tag">기획 ✓</span><span class="tag">인사 ✓</span></div><div class="meta">10/09</div></div>
+      <div class="hint" style="margin-top:8px;position:relative"><span class="pin abs" style="left:-4px;top:50%">3</span>&nbsp;&nbsp;&nbsp;항목에 마우스를 올리면 🗑 삭제 (확인창 있음)</div>
+    </div>
+  </section>
+
+  <!-- ⑥ 모바일 -->
+  <section class="screen" id="s-mobile">
+    <div class="row" style="justify-content:center;gap:24px;align-items:flex-start">
+      <div class="phone">
+        <div class="row between"><span class="btn ghost sm">←</span><b style="font-size:13px">교내 마케팅 공모전</b><span>📂</span></div>
+        <details open style="margin-top:8px"><summary class="hint">원문 보기 <span class="pin">1</span></summary>
+          <div class="src mini" style="margin-top:6px">
+            <span class="fact"><em>F1</em>5인 팀 구성</span><span class="fact lit"><em>F2</em>SNS 콘텐츠 20건</span><span class="fact lit"><em>F3</em>참여율 15% 증가</span><span class="fact"><em>F6</em>협찬처 10곳</span>
+          </div>
+        </details>
+        <div class="mtabs"><span class="on">마케팅</span><span>기획·PM</span><span>영업 ⚠️</span></div>
+        <div style="position:relative"><span class="pin abs" style="right:0;top:-24px">2</span></div>
+        <div class="card" style="border:none;padding:0">
+          <div class="sent">SNS 콘텐츠 20건 기획·제작으로 팔로워 참여율 15% 향상</div>
+          <div class="meta">33자 / 80자</div>
+          <div class="why">💡 마케팅은 콘텐츠 실행력과 대상자 반응을 봐서 …</div>
+          <div class="check ok">✓ 원문과 일치</div>
+          <div class="row" style="margin-top:6px"><span class="btn primary" style="flex:1;text-align:center">복사</span><span class="btn ghost">다시</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<aside class="notes" id="notes"></aside>
+</main>
+<footer>원소스 · 3단계 와이어프레임 · 숫자 핀 = 오른쪽 설명 번호</footer>
+
+<script>
+const NOTES = {
+  input: {t:"① 입력 화면", w:"목표: 노션 원문을 2~3분 안에 옮기고, AI가 직무별로 다르게 쓸 재료를 충분히 확보하기", n:[
+    ["제목 = 결과물 모양","'경험 1개 → 직무별 이력서 1~2줄'. 기능 설명 대신 뭘 얻는지를 말해. 매일 쓰는 도구라서 소개 화면은 이 한 줄로 대신해"],
+    ["예시 · 보관함","처음엔 [예시로 채워보기]로 감을 잡고, 그다음부터는 보관함에서 꺼내 써. 숫자는 저장된 경험 개수야"],
+    ["필수 3칸만 보이게","활동명, 역할, 한 일만 필수(*). 툴이랑 문제 해결은 접어뒀어. '한 줄에 하나씩'이라고 안내하는 이유는 AI가 사실을 쪼개기 쉽게 하려는 거야"],
+    ["재료 충분도","사실 개수와 숫자 유무로 3칸 게이지를 채워. 부족하면 '직무별로 비슷하게 나올 수 있어요'라고 이유까지 말해줘. 막지는 않고 알려주기만 해"],
+    ["직무 칩 + 설명","칩마다 그 직무가 보는 걸 한 줄로 붙였어. 직무 지식이 부족해도 고를 수 있게. JD랑 글자 수는 선택이라 접어뒀어"],
+    ["버튼은 조건부로 켜짐","필수 3칸 + 직무 2개가 채워져야 켜져. 꺼져 있을 땐 왜 꺼졌는지 왼쪽에 써줘 (회색 버튼만 있으면 답답하니까)"]
+  ]},
+  loading: {t:"② 생성 중 · 에러", w:"목표: 기다리는 동안 불안하지 않게, 실패해도 잃는 게 없게", n:[
+    ["단계별 로딩","AI가 실제로 하는 4단계를 보여줘. 그냥 빙글빙글 도는 것보다 '문장만 바꾸는 게 아니라 사실을 고르고 있구나'를 알려주는 신뢰 장치야"],
+    ["에러 = 입력 유지","실패해도 입력 화면은 그대로야. '입력한 내용은 그대로 있어요'라는 한마디가 제일 중요해"],
+    ["첫 사용 권한 창","claude.ai가 처음 한 번 Claude 사용 허용을 물어봐. 한 번 허용하면 다음부턴 안 떠"]
+  ]},
+  result: {t:"③ 결과 작업대", w:"목표: 직무별 차이가 한눈에 보이고, 왜 그렇게 썼는지 납득되고, 바로 복사하기 (아하 모먼트!)", n:[
+    ["상단 바","← 입력 수정 / ＋ 직무 추가 / 새 경험 / 보관함. 결과를 보다가 '인사도 해볼까?' 싶으면 입력으로 안 돌아가도 돼"],
+    ["원문 패널 (왼쪽 고정)","원문을 사실 번호(F1~F7)로 쪼개서 보여줘. 카드에 마우스를 올리면 그 카드가 쓴 사실이 노랗게, 문장 구절에 올리면 그 구절의 근거만 진하게 켜져. 👉 직접 해봐!"],
+    ["직무별 카드","위계: 문장(제일 크게) → 앞세운 사실 태그 → 💡 이유 → 검사 결과 → 버튼. 태그만 훑어도 '마케팅은 숫자, 기획은 과정'처럼 차이가 보여"]
+  ]},
+  warn: {t:"④ 경고 · 직접 수정", w:"목표: 원문 전체를 다시 읽지 않고, 경고 뜬 곳만 확인하고 고치기", n:[
+    ["경고 카드","테두리가 빨갛고, 문제 구절에 물결 밑줄. '⚠️ 원문에 없는 내용 1개'처럼 개수를 보여줘"],
+    ["경고 상세 + 해결 버튼","무엇이 왜 문제인지('원문에서 30을 못 찾았어요') + 바로 할 수 있는 행동 3개(지우기 / 직접 고치기 / 이 직무만 다시). 경고만 띄우고 끝내면 사용자가 뭘 해야 할지 몰라"],
+    ["직접 수정","문장을 클릭하면 바로 편집돼. 칠 때마다 글자 수와 검사가 다시 돌아가. 내가 '주도적으로'를 넣으면 역할 과장 경고가 떠 (내가 쓴 것도 검사해)"],
+    ["차이 작음 배너","세 문장이 서로 비슷할 때만 떠. 원인(재료 부족)과 해결(입력 보강)을 같이 알려줘"]
+  ]},
+  archive: {t:"⑤ 경험 보관함", w:"목표: 지난번에 만든 경험을 다시 꺼내 쓰기 (원래 기획서 MVP에는 없던 기능)", n:[
+    ["옆에서 열리는 패널","어느 화면에서든 📂를 누르면 오른쪽에서 열려. 따로 페이지를 만들지 않은 이유: 잠깐 꺼내고 닫는 동작이라서"],
+    ["항목 = 경험 1건","활동명, 직무 칩(✓ = 복사한 직무), 날짜. 누르면 결과 작업대로 바로 가. 'C: 어디에 뭘 냈는지 헷갈림'을 ✓ 표시로 해결"],
+    ["삭제만 확인창","되돌릴 수 없는 동작은 이것뿐이라 여기만 확인창을 띄워"]
+  ]},
+  mobile: {t:"⑥ 모바일", w:"목표: 폰에서도 쓸 수는 있게 (주 사용은 노트북이라고 가정)", n:[
+    ["원문은 접어서 위에","좁은 화면에 원문과 카드를 나란히 못 놓으니까, 원문을 접을 수 있게 위에 뒀어"],
+    ["카드 → 탭","한 화면 비교는 포기하고 탭으로 넘겨봐. 경고가 있는 탭엔 ⚠️ 표시. 복사 버튼은 엄지로 누르기 쉽게 크게"]
+  ]}
+};
+const notesEl = document.getElementById('notes');
+function show(s){
+  document.querySelectorAll('.screen').forEach(e=>e.classList.toggle('on', e.id==='s-'+s));
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.s===s));
+  const d = NOTES[s];
+  notesEl.innerHTML = `<h2>${d.t}</h2><p class="why">${d.w}</p><ol>${d.n.map((x,i)=>`<li><span class="pin">${i+1}</span><span><b>${x[0]}</b>${x[1]}</span></li>`).join('')}</ol>`;
+}
+document.getElementById('tabs').addEventListener('click', e=>{ if(e.target.dataset.s) show(e.target.dataset.s); });
+
+// 칩 선택 + 버튼 활성화 데모
+let filled=false;
+function updateCta(){
+  const n=document.querySelectorAll('#chips .chip.sel').length;
+  const ok = filled && n>=2;
+  const cta=document.getElementById('cta');
+  cta.style.opacity = ok?1:.4;
+  document.getElementById('cta-hint').textContent = ok ? `직무 ${n}개 선택됨` : (!filled ? '필수 칸 3개를 채워주세요 (예시로 채워보기를 눌러봐)' : '직무를 2개 이상 골라주세요');
+}
+document.getElementById('chips').addEventListener('click', e=>{
+  const c=e.target.closest('.chip'); if(!c || c.style.borderStyle==='dashed') return;
+  c.classList.toggle('sel'); updateCta();
+});
+function fillExample(){
+  filled=true;
+  const set=(id,h)=>{const el=document.getElementById(id); el.innerHTML=h; el.style.color='var(--ink)';};
+  set('f-name','교내 마케팅 공모전'); set('f-role','팀장');
+  set('f-did','5인 팀 구성<br>SNS 콘텐츠 20건 기획·제작<br>학교 행정 부서 조율<br>협찬처 10곳 직접 섭외');
+  set('f-res','팔로워 참여율 15% 증가, 3주 일정 준수, 캠페인 예산 확보');
+  document.querySelectorAll('#gauge i').forEach(i=>i.classList.add('f'));
+  document.getElementById('gauge-t').textContent='사실 7개 · 숫자 4개 · 충분해요';
+  updateCta();
+}
+document.getElementById('cta').addEventListener('click', ()=>{
+  if(document.getElementById('cta').style.opacity!=='1') return;
+  show('loading'); setTimeout(()=>show('result'), 1600);
+});
+document.addEventListener('click', e=>{
+  const g=e.target.closest('[data-go]'); if(!g) return;
+  if(g.dataset.go==='filled') return fillExample();
+  show(g.dataset.go);
+});
+
+// 근거 하이라이트 데모
+const facts=[...document.querySelectorAll('#src .fact')];
+function lit(ids, strong){
+  facts.forEach(f=>{ f.classList.toggle('lit', ids.includes(f.dataset.f)); f.classList.toggle('strong', !!strong && strong===f.dataset.f); });
+}
+document.querySelectorAll('#s-result .card[data-facts]').forEach(c=>{
+  const ids=c.dataset.facts.split(' ');
+  c.addEventListener('mouseenter',()=>lit(ids));
+  c.addEventListener('mouseleave',()=>lit([]));
+  c.querySelectorAll('.seg').forEach(s=>{
+    s.addEventListener('mouseenter',()=>lit(ids, s.dataset.f));
+    s.addEventListener('mouseleave',()=>lit(ids));
+  });
+});
+document.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',()=>{
+  b.textContent='✓ 복사함'; setTimeout(()=>b.textContent='복사',1500);
+}));
+show('input');
+</script>
+</body>
+</html>

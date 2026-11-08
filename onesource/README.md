@@ -53,3 +53,15 @@
 |---|---|---|
 | JD에 맞춰줬으면 | 채용공고를 **지원 대상**으로 추가 (직무 칩과 섞어서 최대 4개, 결과 화면에서도 추가 가능) | 실제 지원은 공고 단위. 같은 직무 공고 2개도 동시에 비교 가능 |
 | 공고 맞춤을 어떻게 보여줄까 | 공고 키워드 3~5개 + 문장 반영 ✓ 표시(코드가 판정) + 문장에 공고 표현 사용 | 맞췄는지 눈으로 확인. 단, 원문 근거 없는 키워드는 넣지 않음 |
+
+## 외부 공유 방법
+
+| 누가 | 링크 | AI 동작 | 비고 |
+|---|---|---|---|
+| 직접 써볼 사람 (팀원·교수님) | [claude.ai 아티팩트](https://claude.ai/artifact/JKUtkZGoabDuFt1qcLYJHW) | ⭕ (claude.ai 로그인 필요, 그 사람 계정 사용량 사용) | 아티팩트 페이지의 **공유(Share) 메뉴**에서 공유 범위를 열어야 다른 사람이 열 수 있음 |
+| 구경만 할 사람 (발표·제출·포트폴리오) | https://chaesilver47-cell.github.io/1/ | ❌ 예시 결과만 | GitHub Pages. 저장소 Settings → Pages에서 켜야 함 (아래) |
+
+**GitHub Pages 켜는 법**: 저장소 Settings → Pages → Build and deployment → Source: *Deploy from a branch* → Branch: `docs/`가 들어 있는 브랜치 선택, 폴더 `/docs` → Save. 1~2분 뒤 위 주소로 열림.
+와이어프레임은 `/1/wireframe/`에 같이 올라가.
+
+**프로토타입을 고친 뒤에는** `./onesource/build-pages.sh`를 한 번 돌려야 `docs/`(공개 주소용 사본)도 갱신돼.

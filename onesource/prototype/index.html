@@ -124,7 +124,7 @@ details.more>div{margin-top:10px;display:flex;flex-direction:column;gap:10px}
 .rbar h1{margin:0;font-size:18px;font-weight:700;text-wrap:balance}
 .rbar .right{display:flex;gap:6px;flex-wrap:wrap}
 .work{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;align-items:start}
-@media (max-width:860px){.work{grid-template-columns:1fr}}
+@media (max-width:860px){.work{grid-template-columns:minmax(0,1fr)}}
 .src{position:sticky;top:max(12px,env(safe-area-inset-top,0px));background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;max-height:calc(100vh - 24px);overflow:auto}
 @media (max-width:860px){.src{position:static;max-height:none}}
 .src h3{margin:0 0 2px;font-size:14px}
@@ -181,6 +181,7 @@ details.more>div{margin-top:10px;display:flex;flex-direction:column;gap:10px}
   .cards .addcard{display:none}
 }
 .banner{margin-bottom:12px}
+.notice a{color:var(--accent);font-weight:600}
 .chip.add:disabled{opacity:.45;cursor:not-allowed}
 .posts{display:flex;flex-direction:column;gap:6px;margin-top:10px}
 .post{display:flex;align-items:center;gap:10px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:7px 8px 7px 12px}
@@ -261,9 +262,15 @@ const EXAMPLE_RESULT = {
     {job:"서비스기획·PM",segments:[{text:"5인 팀 역할 분배와 ",facts:["F1"]},{text:"학교 행정 부서 일정 조율로 ",facts:["F4"]},{text:"3주 캠페인 일정 준수 완료",facts:["F7"]}],
      reason:"기획은 일정과 협업 조율을 보기 때문에 성과 수치보다 진행 과정을 앞에 뒀어요",tags:["역할 분배","행정 조율","3주 일정"]},
     {job:"영업관리",segments:[{text:"협찬처 10곳을 직접 섭외해 ",facts:["F5"]},{text:"캠페인 예산 확보",facts:["F8"]}],
-     reason:"영업관리는 외부 관계와 숫자 성과를 보기 때문에 섭외 건수와 예산 확보를 앞에 뒀어요",tags:["협찬 10곳","예산 확보"]}
+     reason:"영업관리는 외부 관계와 숫자 성과를 보기 때문에 섭외 건수와 예산 확보를 앞에 뒀어요",tags:["협찬 10곳","예산 확보"]},
+    {job:"A사 · 콘텐츠 마케팅",segments:[{text:"SNS 채널 운영과 ",facts:["F2"]},{text:"콘텐츠 20건 기획·제작으로 ",facts:["F3"]},{text:"팔로워 참여율 15% 증가",facts:["F6"]}],
+     reason:"이 공고는 SNS 채널 운영과 콘텐츠 기획을 원해서 운영 경험과 콘텐츠 성과를 앞에 뒀어요",tags:["채널 운영","콘텐츠 20건"],
+     keywords:["SNS 채널 운영","콘텐츠 기획","데이터 기반 성과 분석"]}
   ]
 };
+const EXAMPLE_POSTING = {label:"A사 · 콘텐츠 마케팅", kind:"posting", company:"A사", title:"콘텐츠 마케팅",
+  jd:"[주요 업무]\n- 브랜드 SNS 채널 운영 및 콘텐츠 기획\n[자격 요건]\n- 데이터 기반으로 성과를 분석할 수 있는 분"};
+const ARTIFACT_URL = "https://claude.ai/artifact/JKUtkZGoabDuFt1qcLYJHW";
 
 /* ───────────── 1. 저장 (브라우저에만) ───────────── */
 const store = {
@@ -612,11 +619,12 @@ function renderInput(){
   const suf = sufficiency(d);
   const cg = canGenerate();
   const jobs = selectedJobs();
-  const aiNote = sampleFn === null
-    ? `<div class="notice warn"><span>${ERR.unavailable} 지금은 미리 만들어둔 예시 결과만 볼 수 있어요.</span><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></div>` : "";
+  const noAI = sampleFn === null;
+  const aiNote = noAI
+    ? `<div class="notice info"><span><b>미리보기 주소예요.</b> 여기서는 AI가 돌지 않아서 아래 예시 경험으로 미리 만들어둔 결과를 보여드려요. 내 경험으로 직접 만들려면 <a href="${ARTIFACT_URL}" target="_blank" rel="noopener">claude.ai에서 열어주세요</a> (claude.ai 로그인 필요).</span><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></div>` : "";
   app.innerHTML = `<div class="narrow stack">
     ${aiNote}
-    ${d.isExample ? `<div class="notice info"><span>예시 경험이 채워져 있어요. 그대로 만들어 보거나 비우고 내 경험을 넣어보세요.</span><button class="btn sm" type="button" data-act="clear">비우고 시작</button></div>` : ""}
+    ${d.isExample && !noAI ? `<div class="notice info"><span>예시 경험이 채워져 있어요. 그대로 만들어 보거나 비우고 내 경험을 넣어보세요.</span><button class="btn sm" type="button" data-act="clear">비우고 시작</button></div>` : ""}
     ${state.error ? `<div class="notice warn" role="alert"><span>${esc(state.error)} 입력한 내용은 그대로 있어요.</span><button class="btn sm" type="button" data-act="generate">다시 시도</button></div>` : ""}
     <section class="panel">
       <div class="sec-h"><h2>1. 경험 넣기</h2>
@@ -641,7 +649,9 @@ function renderInput(){
         <div class="field" style="max-width:220px"><label for="in-limit">글자 수 제한 (공백 포함)</label><input id="in-limit" type="number" min="30" max="300" step="5" data-k="limit" value="${esc(d.limit)}"></div>
       </div></details>
     </section>
-    <div class="cta-row"><span class="hint" id="cta-hint">${esc(cg.why)}</span><button class="btn primary lg" type="button" id="go" ${cg.ok ? "" : "disabled"}>직무별로 만들기 →</button></div>
+    <div class="cta-row">${noAI
+      ? `<span class="hint">AI는 claude.ai에서 열었을 때만 동작해요</span><button class="btn primary lg" type="button" data-act="demo">예시 결과 보기 →</button>`
+      : `<span class="hint" id="cta-hint">${esc(cg.why)}</span><button class="btn primary lg" type="button" id="go" ${cg.ok ? "" : "disabled"}>직무별로 만들기 →</button>`}</div>
   </div>`;
 }
 
@@ -760,8 +770,9 @@ function openExperience(id){
 }
 function openDemo(){
   const facts = verifyFacts(EXAMPLE_RESULT.facts, sourceText(EXAMPLE));
-  const results = normalizeResult(EXAMPLE_RESULT, ["마케팅","서비스기획·PM","영업관리"]);
-  const demo = {id:"demo", input:{...EXAMPLE, jd:{}, limit:80}, facts, results, order:["마케팅","서비스기획·PM","영업관리"], updatedAt:Date.now()};
+  const order = ["마케팅","서비스기획·PM","영업관리",EXAMPLE_POSTING.label];
+  const results = normalizeResult(EXAMPLE_RESULT, order);
+  const demo = {id:"demo", input:{...EXAMPLE, limit:80}, facts, results, order, targets:{[EXAMPLE_POSTING.label]:EXAMPLE_POSTING}, updatedAt:Date.now()};
   state.archive = state.archive.filter(x => x.id !== "demo");
   state._demo = demo;
   state.currentId = "demo"; state.view = "result"; state.editing = {}; state.mTab = 0;
