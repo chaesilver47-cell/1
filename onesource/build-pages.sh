@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # 1) prototype/index.html(원본 소스) → prototype/publish.html(아티팩트에 올리는 파일)
-#    페이지가 "복제본 이름 붙이기" 때 자기 자신을 다시 저장할 수 있도록, 소스 전체를 SELF_T에 넣는다.
+#    소스에 __SELF__ 자리가 있으면 소스 전체를 넣는다 (지금은 안 씀 → 그대로 복사).
 # 2) publish.html → docs/index.html (GitHub Pages용 완성 HTML)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 python3 - <<'PY'
 import json
 src = open("onesource/prototype/index.html", encoding="utf8").read()
-assert src.count("__SELF__") == 1, "SELF placeholder must appear exactly once"
-lit = json.dumps(src, ensure_ascii=False).replace("<", "\\u003c")
-open("onesource/prototype/publish.html", "w", encoding="utf8").write(src.replace("__SELF__", lit, 1))
+out = src
+if src.count("__SELF__") == 1:
+    out = src.replace("__SELF__", json.dumps(src, ensure_ascii=False).replace("<", "\\u003c"), 1)
+open("onesource/prototype/publish.html", "w", encoding="utf8").write(out)
 PY
 mkdir -p docs/wireframe
 {

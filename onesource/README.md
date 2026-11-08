@@ -82,8 +82,9 @@ Claude Code에서 올린 아티팩트는 **다른 계정이 열면 Claude 연결
 - Claude Code에서 올린 아티팩트는 **주인이 아닌 계정이 열면 AI 연결을 받지 못한다** (개인 계정으로도 확인: `Claude: 없음 · 권한: 확인 불가 · 377ms`).
 - 대신 **복제**하면 복제한 사람이 주인이 되어 자기 Claude로 쓸 수 있다.
 - 원본 링크를 남이 열면 맨 위에 "복제해서 내 계정으로 가져가면 바로 쓸 수 있어요" 안내가 뜬다.
-- 복제본 주인이 열면 "내 사본에 이름 붙이기 · OneSource ( 이름 )" 버튼이 뜬다. 누르면 페이지가 제목을 바꿔 스스로 다시 저장한다 (`artifact` + `user` 기능).
-- 이를 위해 빌드 때 페이지 소스 전체를 `SELF_T`에 넣는다: `prototype/index.html`(소스) → `./onesource/build-pages.sh` → `prototype/publish.html`(올리는 파일), `docs/index.html`(Pages).
+- 안내 팝업은 **1단계 로그인 → (새로고침) → 2단계 복제** 순서. 이 화면에서는 로그인 여부를 알 수 없어서, "로그인하러 갔다"를 브라우저에 기억했다가 새로고침 뒤 2단계를 연다. 2단계에는 claude.ai 상단 메뉴 그림(∨ → 복제 하이라이트)과 "(Copy) 부분은 바꿀 수 있어요" 한 줄.
+- ~~복제본 이름 자동 붙이기~~ → 사용 피드백으로 **뺌**. 제목은 복제한 사람이 직접 바꾸면 충분.
+- 빌드: `prototype/index.html`(소스) → `./onesource/build-pages.sh` → `prototype/publish.html`(아티팩트에 올리는 파일), `docs/index.html`(Pages).
 
 ## 5단계 전 추가 기능 (사용 피드백 반영)
 
