@@ -188,6 +188,9 @@ a.btn.primary{color:var(--on-accent)}
 .diag{flex-basis:100%;font-size:11px;color:var(--faint)}
 #topnote{max-width:760px;margin:0 auto}
 #topnote .notice.top{margin-bottom:16px}
+.overlay .box.dup{width:min(440px,100%)}
+.dup-sub{font-size:14px;color:var(--sub);margin:0 0 14px}
+.dup-steps{margin:0 0 18px;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:15px}
 .owner-tag{font-size:16px;font-weight:600;color:var(--sub)}
 .rename-row{align-items:center}
 .rename-row input{width:9em;border:1px solid var(--line-strong);border-radius:6px;padding:4px 8px;background:var(--surface)}
@@ -990,6 +993,7 @@ async function initCopyFeatures(){
   } catch (e) {}
   await samplePromise;
   renderTopNote();
+  if (sampleFn === null) showDupModal(); // 남의 링크로 열었을 때: 들어오자마자 복제 안내
 }
 function renderTopNote(){
   const el = document.getElementById("topnote");
@@ -998,13 +1002,33 @@ function renderTopNote(){
   if (!el) return;
   let html = "";
   if (IN_CLAUDE && sampleFn === null) {
-    html = `<div class="notice info top"><span><b>복제해서 내 계정으로 가져가면 바로 쓸 수 있어요.</b> 이 링크는 보기 전용이라 여기서는 AI가 돌지 않아요. 페이지 위쪽 메뉴에서 <b>복제</b>를 누르면 내 claude.ai 계정에 사본이 생기고, 그 사본에서 내 Claude로 직무별 문장을 만들 수 있어요. 그 전에는 예시 결과를 둘러볼 수 있어요.</span><span class="acts-inline"><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span><span class="diag mono">${diagText()}</span></div>`;
+    html = `<div class="notice info top"><span><b>보기 전용 링크예요.</b> 복제해서 내 계정으로 가져가면 내 Claude로 바로 쓸 수 있어요.</span><span class="acts-inline"><button class="btn sm primary" type="button" data-act="dup-help">복제하는 법</button><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span><span class="diag mono">${diagText()}</span></div>`;
   } else if ((COPY_NAME === null || (viewer && viewer.id && COPY_OWNER && viewer.id !== COPY_OWNER)) && viewer && viewer.isOwner && artNS && renameState !== "dismissed" && !store.get("renameDismissed", false)) {
     html = `<div class="notice info top rename"><span><b>내 사본에 이름 붙이기</b> · 목록에서 알아보기 쉽게 제목을 바꿔요.</span>
       <span class="acts-inline rename-row"><span class="mono">OneSource (</span><input id="rename-input" maxlength="20" value="${esc(viewer.name || "")}" placeholder="이름" aria-label="사본 이름"><span class="mono">)</span>
       <button class="btn sm primary" type="button" data-act="rename" ${renameState === "busy" ? "disabled" : ""}>${renameState === "busy" ? "바꾸는 중…" : "이름 붙이기"}</button><button class="btn sm quiet" type="button" data-act="rename-skip">괜찮아요</button></span></div>`;
   }
   el.innerHTML = html;
+}
+function showDupModal(){
+  let m = document.getElementById("dup-modal");
+  if (!m) { m = document.createElement("div"); m.id = "dup-modal"; document.body.appendChild(m); }
+  m.innerHTML = `<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="dup-title"><div class="box dup">
+    <h3 id="dup-title">먼저 복제해서 내 계정으로 가져가 주세요</h3>
+    <p class="dup-sub">이 링크는 <b>보기 전용</b>이라 여기서는 AI가 돌지 않아요. 복제한 내 사본에서는 <b>내 claude.ai 계정의 Claude</b>로 바로 만들 수 있어요. API 키도, 비용 설정도 필요 없어요.</p>
+    <ol class="dup-steps">
+      <li><b>페이지 위쪽 메뉴에서 '복제'</b>를 눌러요</li>
+      <li>내 계정에 생긴 <b>사본이 열리면</b> 그대로 쓰면 돼요</li>
+      <li>처음 한 번 뜨는 <b>Claude 사용 허용</b> 창에서 허용해요</li>
+    </ol>
+    <div class="row-end"><button class="btn" type="button" data-dup="demo">예시 결과 먼저 볼게요</button><button class="btn primary" type="button" data-dup="close">알겠어요</button></div>
+  </div></div>`;
+  const close = () => { m.innerHTML = ""; document.removeEventListener("keydown", onKey); };
+  const onKey = e => { if (e.key === "Escape") close(); };
+  document.addEventListener("keydown", onKey);
+  m.querySelector('[data-dup="close"]').onclick = close;
+  m.querySelector('[data-dup="demo"]').onclick = () => { close(); openDemo(); };
+  m.querySelector('[data-dup="close"]').focus();
 }
 async function doRename(){
   const name = (document.getElementById("rename-input").value || "").trim();
@@ -1026,6 +1050,7 @@ document.getElementById("topnote").addEventListener("click", e => {
   if (t.dataset.act === "rename") return doRename();
   if (t.dataset.act === "rename-skip") { renameState = "dismissed"; store.set("renameDismissed", true); return renderTopNote(); }
   if (t.dataset.act === "demo") return openDemo();
+  if (t.dataset.act === "dup-help") return showDupModal();
 });
 
 updateCount();
