@@ -188,7 +188,24 @@ a.btn.primary{color:var(--on-accent)}
 .diag{flex-basis:100%;font-size:11px;color:var(--faint)}
 #topnote{max-width:760px;margin:0 auto}
 #topnote .notice.top{margin-bottom:16px}
-.overlay .box.dup{width:min(440px,100%)}
+.overlay .box.dup{width:min(460px,100%);max-height:calc(100vh - 32px);overflow:auto}
+.mock{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 14px}
+.mock-bar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px}
+.mock-home{color:var(--sub)}
+.mock-title{font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.mock-caret,.mock-item{position:relative;display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--warn);border-radius:6px;padding:0 6px;background:var(--warn-soft);color:var(--warn);font-weight:700}
+.mock-gap{flex:1}
+.mock-share{font-size:12px;color:var(--sub);border:1px solid var(--line);border-radius:6px;padding:1px 8px}
+.mock-menu{display:flex;flex-direction:column;gap:6px;width:170px;margin:6px 0 0 34px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:var(--shadow)}
+.mock-line{height:8px;border-radius:4px;background:var(--line)}
+.mock-item{justify-content:flex-start;padding:3px 8px}
+.mock-no{position:absolute;top:-9px;right:-9px;width:18px;height:18px;border-radius:50%;background:var(--warn);color:#fff;font-style:normal;font-size:11px;display:flex;align-items:center;justify-content:center}
+.mock-cap{font-size:12px;color:var(--faint);margin:8px 0 0}
+.dup-pointer{position:fixed;top:max(6px,env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));z-index:35;display:flex;align-items:center;gap:8px;background:var(--warn);color:#fff;border-radius:10px;padding:7px 10px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.2);animation:dp-bob 1.2s ease-in-out infinite}
+.dup-pointer .dp-arrow{font-size:14px}
+.dup-pointer button{border:0;background:transparent;color:#fff;font-size:13px;padding:0 2px}
+@keyframes dp-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.dup-pointer{animation:none}}
 .dup-need{font-size:14px;background:var(--bg);border-radius:8px;padding:8px 10px;margin:0 0 14px}
 .add-post{width:100%;justify-content:center;border-style:dashed;padding:12px}
 .or-line{font-size:13px;color:var(--sub);margin:14px 0 8px}
@@ -1300,19 +1317,31 @@ function showDupModal(){
     <h3 id="dup-title">먼저 복제해서 내 계정으로 가져가 주세요</h3>
     <p class="dup-sub">이 링크는 <b>보기 전용</b>이라 여기서는 AI가 돌지 않아요. 복제한 내 사본에서는 <b>내 claude.ai 계정의 Claude</b>로 바로 만들 수 있어요. API 키도, 비용 설정도 필요 없어요.</p>
     <p class="dup-need">✔ <b>claude.ai 로그인이 필요해요.</b> 계정이 없으면 claude.ai에서 먼저 가입해주세요. 쓰는 만큼 내 계정 사용량에서 나가요.</p>
+    <div class="mock" aria-hidden="true">
+      <div class="mock-bar"><span class="mock-home">⌂</span><span class="mock-title">원소스 OneSource <span class="mock-caret">∨<i class="mock-no">1</i></span></span><span class="mock-gap"></span><span class="mock-share">공유</span></div>
+      <div class="mock-menu"><span class="mock-line"></span><span class="mock-item">복제<i class="mock-no">2</i></span><span class="mock-line"></span></div>
+      <p class="mock-cap">claude.ai 화면 맨 위 (이 페이지 바로 위쪽)</p>
+    </div>
     <ol class="dup-steps">
-      <li><b>페이지 위쪽 메뉴에서 '복제'</b>를 눌러요</li>
-      <li>내 계정에 생긴 <b>사본이 열리면</b> 그대로 쓰면 돼요</li>
-      <li>처음 한 번 뜨는 <b>Claude 사용 허용</b> 창에서 허용해요</li>
+      <li><b>화면 왼쪽 위, 제목 옆 아래 화살표(∨)</b>를 눌러요</li>
+      <li>열린 메뉴에서 <b>'복제'</b>를 눌러요 → 내 계정에 사본이 생기고 열려요</li>
+      <li>사본에서 처음 만들기를 누를 때 뜨는 <b>Claude 사용 허용</b> 창에서 허용해요</li>
     </ol>
     <div class="row-end"><button class="btn" type="button" data-dup="demo">예시 결과 먼저 볼게요</button><button class="btn primary" type="button" data-dup="close">알겠어요</button></div>
   </div></div>`;
-  const close = () => { m.innerHTML = ""; document.removeEventListener("keydown", onKey); };
+  const close = () => { m.innerHTML = ""; document.removeEventListener("keydown", onKey); showDupPointer(); };
   const onKey = e => { if (e.key === "Escape") close(); };
   document.addEventListener("keydown", onKey);
   m.querySelector('[data-dup="close"]').onclick = close;
   m.querySelector('[data-dup="demo"]').onclick = () => { close(); openDemo(); };
   m.querySelector('[data-dup="close"]').focus();
+}
+// 팝업을 닫은 뒤: 페이지 왼쪽 위에서 바로 위(claude.ai 제목 옆 ∨)를 가리키는 말풍선
+function showDupPointer(){
+  let el = document.getElementById("dup-pointer");
+  if (!el) { el = document.createElement("div"); el.id = "dup-pointer"; document.body.appendChild(el); }
+  el.innerHTML = `<div class="dup-pointer" role="note"><span class="dp-arrow">▲</span><span>바로 위 <b>제목 옆 ∨</b>를 누르고 <b>'복제'</b>를 눌러요</span><button type="button" aria-label="닫기">✕</button></div>`;
+  el.querySelector("button").onclick = () => { el.innerHTML = ""; };
 }
 async function doRename(){
   const name = (document.getElementById("rename-input").value || "").trim();
