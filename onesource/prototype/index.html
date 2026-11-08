@@ -185,6 +185,7 @@ details.more>div{margin-top:10px;display:flex;flex-direction:column;gap:10px}
 a.btn{text-decoration:none;color:inherit}
 a.btn.primary{color:var(--on-accent)}
 .acts-inline{display:flex;gap:6px;flex-wrap:wrap}
+.diag{flex-basis:100%;font-size:11px;color:var(--faint)}
 .chip.add:disabled{opacity:.45;cursor:not-allowed}
 .posts{display:flex;flex-direction:column;gap:6px;margin-top:10px}
 .post{display:flex;align-items:center;gap:10px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:7px 8px 7px 12px}
@@ -306,7 +307,19 @@ let sampleFn; // undefined = 확인 중, null = 사용 불가
 const samplePromise = (window.claude && typeof window.claude.use === "function")
   ? window.claude.use("sample").then(s => (sampleFn = s || null), () => (sampleFn = null))
   : Promise.resolve(sampleFn = null);
-samplePromise.then(() => { if (state.view === "input") render(); });
+// 연결 진단: AI 연결이 안 될 때 원인을 화면에 보여주기 위함
+const diag = {sample:"확인 중", perm:"-", ms:0};
+const t0 = performance.now();
+let permsNS = null;
+samplePromise.then(async () => {
+  diag.ms = Math.round(performance.now() - t0);
+  diag.sample = sampleFn ? "연결됨" : "없음";
+  if (IN_CLAUDE && !sampleFn) {
+    try { permsNS = await window.claude.use("permissions"); diag.perm = permsNS ? await permsNS.state("sample") : "확인 불가"; }
+    catch (e) { diag.perm = "확인 실패"; }
+  }
+  if (state.view === "input") render();
+});
 
 function sourceText(d){
   if (d.mode === "raw") return `활동명: ${d.name || "(없음)"}\n내 역할: ${d.role || "(없음)"}\n기간: ${d.period || "(없음)"}\n내용:\n${d.raw}`;
@@ -401,6 +414,7 @@ const ERR = {
   prompt_too_large:"입력이 너무 길어요. 원문을 조금 줄여주세요.",
   unavailable: IN_CLAUDE ? "claude.ai에 로그인해야 AI로 만들 수 있어요. 로그인한 뒤 이 페이지를 새로고침해주세요." : "AI 연결은 claude.ai에서 이 페이지를 열었을 때만 돼요."
 };
+const diagText = () => `연결 상태 · 화면: ${IN_CLAUDE ? "claude.ai 안" : "claude.ai 밖"} · Claude: ${diag.sample} · 권한: ${diag.perm} · ${diag.ms}ms`;
 const errMsg = e => ERR[e && e.code] || "만들다가 문제가 생겼어요. 다시 시도해주세요.";
 
 async function askJSON(prompt, onText, signal){
@@ -628,7 +642,9 @@ function renderInput(){
   const noAI = sampleFn === null;
   const aiNote = noAI
     ? (IN_CLAUDE
-      ? `<div class="notice info"><span><b>로그인하면 내 Claude로 직접 만들 수 있어요.</b> 지금은 로그인 전이라 예시 결과만 볼 수 있어요. 새 탭에서 로그인을 마친 뒤 <b>이 페이지를 새로고침</b>해주세요.</span><span class="acts-inline"><a class="btn sm primary" href="${LOGIN_URL}" target="_blank" rel="noopener">claude.ai 로그인</a><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span></div>`
+      ? (diag.perm === "denied"
+        ? `<div class="notice warn"><span><b>이 페이지의 Claude 사용이 꺼져 있어요.</b> 권한 설정에서 Claude를 켠 뒤 이 페이지를 새로고침해주세요.</span><span class="acts-inline"><button class="btn sm primary" type="button" data-act="perm-manage">권한 설정 열기</button><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span><span class="diag mono">${diagText()}</span></div>`
+        : `<div class="notice info"><span><b>이 화면에서 Claude 연결을 받지 못했어요.</b> 로그인 전이라면 새 탭에서 로그인한 뒤 이 페이지를 새로고침해주세요. 로그인했는데도 이 안내가 계속 나오면 아래 연결 상태를 알려주세요. 그동안은 예시 결과를 볼 수 있어요.</span><span class="acts-inline"><a class="btn sm primary" href="${LOGIN_URL}" target="_blank" rel="noopener">claude.ai 로그인</a><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span><span class="diag mono">${diagText()}</span></div>`)
       : `<div class="notice info"><span><b>미리보기 주소예요.</b> 여기서는 AI가 돌지 않아서 예시 경험으로 미리 만들어둔 결과를 보여드려요. 내 경험으로 만들려면 claude.ai 버전을 열고 로그인해주세요.</span><span class="acts-inline"><a class="btn sm primary" href="${ARTIFACT_URL}" target="_blank" rel="noopener">claude.ai에서 열기</a><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span></div>`)
     : "";
   app.innerHTML = `<div class="narrow stack">
@@ -864,6 +880,11 @@ function onClick(e){
   switch (t.dataset.act) {
     case "generate": return generate();
     case "demo": return openDemo();
+    case "perm-manage": {
+      if (!permsNS) return toast("페이지 위쪽 메뉴의 권한 설정에서 Claude를 켜주세요");
+      permsNS.manage().then(() => toast("설정을 바꿨다면 페이지를 새로고침해주세요"), () => toast("페이지 위쪽 메뉴의 권한 설정에서 Claude를 켜주세요"));
+      return;
+    }
     case "clear": state.draft = blankDraft(); saveDraft(); return render();
     case "back": {
       if (exp && exp.id !== "demo") { state.draft = Object.assign(blankDraft(), JSON.parse(JSON.stringify(exp.input)), {jobs: exp.order.filter(j => JOBS[j]), custom: exp.order.find(j => !JOBS[j] && targetOf(exp, j).kind !== "posting") || "",
