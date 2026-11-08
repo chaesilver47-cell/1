@@ -311,10 +311,30 @@ const saveDraft = () => store.set("draft", state.draft);
 const saveArchive = () => { store.set("archive", state.archive); updateCount(); };
 
 /* ───────────── 2. AI 연결 (claude.ai 아티팩트의 sample) ───────────── */
+// 연결 방식 두 가지
+// ① claude.ai 채팅에서 만든 아티팩트(공개 AI 앱): window.claude.complete — 여는 사람이 자기 계정으로 로그인, 사용량도 그 사람 몫
+// ② Claude Code 아티팩트: window.claude.use("sample")
+const CHAT_AI = !!(window.claude && typeof window.claude.complete === "function");
+function parseLooseJSON(text){
+  const t = String(text || "").trim();
+  try { return JSON.parse(t); } catch (e) {}
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) { try { return JSON.parse(fence[1]); } catch (e) {} }
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) {} }
+  return null;
+}
 let sampleFn; // undefined = 확인 중, null = 사용 불가
-const samplePromise = (window.claude && typeof window.claude.use === "function")
-  ? window.claude.use("sample").then(s => (sampleFn = s || null), () => (sampleFn = null))
-  : Promise.resolve(sampleFn = null);
+const samplePromise = CHAT_AI
+  ? Promise.resolve(sampleFn = {json: async (prompt) => {
+      const text = await window.claude.complete(prompt + "\n\n다른 말 없이 JSON 하나만 답해.");
+      const v = parseLooseJSON(text);
+      if (!v) throw {code:"invalid_json", text};
+      return v;
+    }})
+  : (window.claude && typeof window.claude.use === "function")
+    ? window.claude.use("sample").then(s => (sampleFn = s || null), () => (sampleFn = null))
+    : Promise.resolve(sampleFn = null);
 // 연결 진단: AI 연결이 안 될 때 원인을 화면에 보여주기 위함
 const diag = {sample:"확인 중", perm:"-", ms:0};
 const t0 = performance.now();

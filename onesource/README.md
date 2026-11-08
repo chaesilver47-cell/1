@@ -65,3 +65,14 @@
 와이어프레임은 `/1/wireframe/`에 같이 올라가.
 
 **프로토타입을 고친 뒤에는** `./onesource/build-pages.sh`를 한 번 돌려야 `docs/`(공개 주소용 사본)도 갱신돼.
+
+## 다른 사람이 "자기 계정으로" 쓰게 하기 (API 키 없이)
+
+Claude Code에서 올린 아티팩트는 **다른 계정이 열면 Claude 연결을 받지 못한다**. 그래서 다른 사람에게 쓰게 할 때는 **claude.ai 채팅 아티팩트(AI 앱)**로 공개한다.
+쓰는 사람은 자기 Claude 계정으로 로그인하고, 사용량도 그 사람 구독에서 나간다 (공식 안내: claude.com/blog/claude-powered-artifacts).
+
+1. claude.ai에서 새 채팅 → `docs/index.html` 첨부
+2. "첨부한 index.html을 한 글자도 바꾸지 말고 그대로 HTML 아티팩트로 만들어줘" 라고 보내기
+3. 만들어진 아티팩트에서 공개(Publish) → 링크 공유
+
+페이지는 `window.claude.complete`(채팅 아티팩트)와 `claude.use("sample")`(Claude Code 아티팩트)를 둘 다 지원한다.
