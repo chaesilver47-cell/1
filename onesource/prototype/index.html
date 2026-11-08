@@ -186,6 +186,14 @@ a.btn{text-decoration:none;color:inherit}
 a.btn.primary{color:var(--on-accent)}
 .acts-inline{display:flex;gap:6px;flex-wrap:wrap}
 .diag{flex-basis:100%;font-size:11px;color:var(--faint)}
+.overlay .box.wide{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto}
+.m-sub{display:block;font-size:13px;color:var(--sub);margin:0 0 12px}
+.msteps{margin:0 0 8px;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.msteps li{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.msteps li .m-sub{margin:0}
+.msteps textarea{width:100%;border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;background:var(--surface);font-size:13px;resize:vertical}
+.m-prompt{font-family:var(--f-mono);font-size:12px!important;color:var(--sub)}
+.m-err{color:var(--warn);font-size:13px;margin:0 0 8px;min-height:1em}
 .chip.add:disabled{opacity:.45;cursor:not-allowed}
 .posts{display:flex;flex-direction:column;gap:6px;margin-top:10px}
 .post{display:flex;align-items:center;gap:10px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:7px 8px 7px 12px}
@@ -277,7 +285,6 @@ const EXAMPLE_POSTING = {label:"A사 · 콘텐츠 마케팅", kind:"posting", co
 const ARTIFACT_URL = "https://claude.ai/artifact/JKUtkZGoabDuFt1qcLYJHW";
 // claude.ai 안에서 열렸는지(로그인 전이라 AI만 못 쓰는 상태) vs 바깥(GitHub Pages 등)인지
 const IN_CLAUDE = !!(window.claude && typeof window.claude.use === "function");
-const LOGIN_URL = "https://claude.ai/login?returnTo=" + encodeURIComponent(new URL(ARTIFACT_URL).pathname);
 
 /* ───────────── 1. 저장 (브라우저에만) ───────────── */
 const store = {
@@ -417,9 +424,49 @@ const ERR = {
 const diagText = () => `연결 상태 · 화면: ${IN_CLAUDE ? "claude.ai 안" : "claude.ai 밖"} · Claude: ${diag.sample} · 권한: ${diag.perm} · ${diag.ms}ms`;
 const errMsg = e => ERR[e && e.code] || "만들다가 문제가 생겼어요. 다시 시도해주세요.";
 
+/* 자동 연결이 없는 화면용: 사람이 직접 내 AI에 지시문을 보내고 답을 붙여넣는다 */
+function parseLooseJSON(text){
+  const t = (text || "").trim();
+  try { return JSON.parse(t); } catch (e) {}
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) { try { return JSON.parse(fence[1]); } catch (e) {} }
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) {} }
+  return null;
+}
+function manualAsk(prompt){
+  return new Promise((resolve, reject) => {
+    let layer = document.getElementById("manual-layer");
+    if (!layer) { layer = document.createElement("div"); layer.id = "manual-layer"; document.body.appendChild(layer); }
+    layer.innerHTML = `<div class="overlay" role="dialog" aria-label="내 AI로 만들기"><div class="box wide">
+      <h3>내 AI로 만들기</h3>
+      <p class="m-sub">이 화면에서는 Claude를 자동으로 부를 수 없어서, 지시문을 내 Claude 대화창에 붙여넣는 방식으로 만들어요. 검사·하이라이트·보관함은 똑같이 동작해요.</p>
+      <ol class="msteps">
+        <li><b>1. 지시문 복사</b><span class="acts-inline"><button class="btn sm primary" type="button" id="m-copy">지시문 복사</button><a class="btn sm" href="https://claude.ai/new" target="_blank" rel="noopener">Claude 새 대화 열기 ↗</a></span>
+          <details><summary>지시문 직접 보기</summary><textarea class="m-prompt" readonly rows="5">${esc(prompt)}</textarea></details></li>
+        <li><b>2. Claude 대화창에 붙여넣고 보내기</b><span class="m-sub">답으로 { 로 시작하는 JSON이 나와요. ChatGPT 같은 다른 AI도 돼요.</span></li>
+        <li><b>3. 답을 통째로 복사해서 여기에 붙여넣기</b><textarea id="m-answer" rows="5" placeholder='{"facts":[...],"results":[...]}'></textarea></li>
+      </ol>
+      <p class="m-err" id="m-err" role="alert"></p>
+      <div class="row-end"><button class="btn" type="button" id="m-cancel">취소</button><button class="btn primary" type="button" id="m-ok">결과 만들기</button></div>
+    </div></div>`;
+    const close = () => { layer.innerHTML = ""; };
+    layer.querySelector("#m-copy").onclick = async (e) => {
+      const ok = await copyText(prompt);
+      e.target.textContent = ok ? "✓ 복사했어요" : "복사가 막혔어요 · 아래 '직접 보기'에서 복사";
+      if (!ok) layer.querySelector("details").open = true;
+    };
+    layer.querySelector("#m-cancel").onclick = () => { close(); reject({code:"cancelled"}); };
+    layer.querySelector("#m-ok").onclick = () => {
+      const v = parseLooseJSON(layer.querySelector("#m-answer").value);
+      if (!v || !Array.isArray(v.results)) { layer.querySelector("#m-err").textContent = "답에서 결과(JSON)를 찾지 못했어요. AI 답 전체를 빠짐없이 복사했는지 확인해주세요."; return; }
+      close(); resolve(v);
+    };
+  });
+}
 async function askJSON(prompt, onText, signal){
   await samplePromise;
-  if (!sampleFn) throw {code:"unavailable"};
+  if (!sampleFn) return manualAsk(prompt); // 자동 연결이 없으면: 지시문 복사 → 내 AI → 답 붙여넣기
   try {
     return await sampleFn.json(prompt, {onText, signal, cache:false});
   } catch (e) {
@@ -521,7 +568,9 @@ async function generate(){
   const jobs = targets.map(t => t.label);
   state.error = null;
   ctl = new AbortController();
-  let step = 0; showLoading(0);
+  let step = 0;
+  await samplePromise;
+  if (sampleFn) showLoading(0);
   const onText = ({text}) => {
     let s = 1, extra = "";
     if (text.includes('"results"')) { s = 2; const n = (text.split('"results"')[1].match(/"job"/g) || []).length; extra = `${Math.max(1, n)}/${jobs.length}`; }
@@ -640,12 +689,11 @@ function renderInput(){
   const cg = canGenerate();
   const jobs = selectedJobs();
   const noAI = sampleFn === null;
+  const manualMsg = "<b>직무별로 만들기</b>를 누르면 지시문을 내 Claude 대화창에 붙여넣는 방식으로 똑같이 만들 수 있어요.";
   const aiNote = noAI
-    ? (IN_CLAUDE
-      ? (diag.perm === "denied"
-        ? `<div class="notice warn"><span><b>이 페이지의 Claude 사용이 꺼져 있어요.</b> 권한 설정에서 Claude를 켠 뒤 이 페이지를 새로고침해주세요.</span><span class="acts-inline"><button class="btn sm primary" type="button" data-act="perm-manage">권한 설정 열기</button><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span><span class="diag mono">${diagText()}</span></div>`
-        : `<div class="notice info"><span><b>이 화면에서 Claude 연결을 받지 못했어요.</b> 로그인 전이라면 새 탭에서 로그인한 뒤 이 페이지를 새로고침해주세요. 로그인했는데도 이 안내가 계속 나오면 아래 연결 상태를 알려주세요. 그동안은 예시 결과를 볼 수 있어요.</span><span class="acts-inline"><a class="btn sm primary" href="${LOGIN_URL}" target="_blank" rel="noopener">claude.ai 로그인</a><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span><span class="diag mono">${diagText()}</span></div>`)
-      : `<div class="notice info"><span><b>미리보기 주소예요.</b> 여기서는 AI가 돌지 않아서 예시 경험으로 미리 만들어둔 결과를 보여드려요. 내 경험으로 만들려면 claude.ai 버전을 열고 로그인해주세요.</span><span class="acts-inline"><a class="btn sm primary" href="${ARTIFACT_URL}" target="_blank" rel="noopener">claude.ai에서 열기</a><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span></div>`)
+    ? (IN_CLAUDE && diag.perm === "denied"
+      ? `<div class="notice warn"><span><b>이 페이지의 Claude 자동 사용이 꺼져 있어요.</b> 권한 설정에서 켜고 새로고침하거나, ${manualMsg}</span><span class="acts-inline"><button class="btn sm" type="button" data-act="perm-manage">권한 설정 열기</button><button class="btn sm" type="button" data-act="demo">예시 결과 보기</button></span><span class="diag mono">${diagText()}</span></div>`
+      : `<div class="notice info"><span><b>이 화면에서는 Claude 자동 연결이 안 돼요.</b> ${manualMsg}</span><span class="acts-inline"><button class="btn sm" type="button" data-act="demo">예시 결과 먼저 보기</button></span>${IN_CLAUDE ? `<span class="diag mono">${diagText()}</span>` : ""}</div>`)
     : "";
   app.innerHTML = `<div class="narrow stack">
     ${aiNote}
@@ -674,9 +722,7 @@ function renderInput(){
         <div class="field" style="max-width:220px"><label for="in-limit">글자 수 제한 (공백 포함)</label><input id="in-limit" type="number" min="30" max="300" step="5" data-k="limit" value="${esc(d.limit)}"></div>
       </div></details>
     </section>
-    <div class="cta-row">${noAI
-      ? `<span class="hint">${IN_CLAUDE ? "로그인 후 새로고침하면 이 버튼으로 바로 만들 수 있어요" : "AI는 claude.ai 버전에서만 동작해요"}</span><span class="acts-inline"><button class="btn lg" type="button" data-act="demo">예시 결과 보기</button><a class="btn primary lg" href="${IN_CLAUDE ? LOGIN_URL : ARTIFACT_URL}" target="_blank" rel="noopener">${IN_CLAUDE ? "로그인하고 내 경험으로 만들기" : "claude.ai에서 내 경험으로 만들기"} →</a></span>`
-      : `<span class="hint" id="cta-hint">${esc(cg.why)}</span><button class="btn primary lg" type="button" id="go" ${cg.ok ? "" : "disabled"}>직무별로 만들기 →</button>`}</div>
+    <div class="cta-row"><span class="hint" id="cta-hint">${esc(cg.why)}${noAI && cg.ok ? " · 지시문 복사·붙여넣기 방식" : ""}</span><button class="btn primary lg" type="button" id="go" ${cg.ok ? "" : "disabled"}>직무별로 만들기 →</button></div>
   </div>`;
 }
 
@@ -724,7 +770,7 @@ function renderResult(busy){
          <button class="btn sm quiet" type="button" data-act="add-close">닫기</button>`
       : `<button class="btn" type="button" data-act="add-open">＋ 직무·공고 추가</button>`}</div>` : "";
   app.innerHTML = `
-    <div class="rbar"><div class="left"><button class="btn quiet sm" type="button" data-act="back">← 입력 수정</button><h1>${esc(exp.input.name || "이름 없는 경험")}</h1>${isDemo ? `<span class="demo-badge">예시 결과 · 미리 만들어둔 것</span>` : ""}${isDemo && sampleFn === null ? `<a class="btn sm primary" href="${IN_CLAUDE ? LOGIN_URL : ARTIFACT_URL}" target="_blank" rel="noopener">${IN_CLAUDE ? "로그인하고 내 경험으로 만들기" : "claude.ai에서 내 경험으로 만들기"}</a>` : ""}</div>
+    <div class="rbar"><div class="left"><button class="btn quiet sm" type="button" data-act="back">← 입력 수정</button><h1>${esc(exp.input.name || "이름 없는 경험")}</h1>${isDemo ? `<span class="demo-badge">예시 결과 · 미리 만들어둔 것</span>` : ""}${isDemo ? `<button class="btn sm primary" type="button" data-act="back">내 경험으로 만들기</button>` : ""}</div>
       <div class="right"><button class="btn sm" type="button" data-act="new">새 경험</button></div></div>
     ${tooSimilar(exp) ? `<div class="notice warn banner"><span>직무별 문장이 서로 비슷해요. 한 일이나 성과를 1~2개 더 넣으면 차이가 커져요.</span><button class="btn sm" type="button" data-act="back">입력 보강하기</button></div>` : ""}
     <div class="work">
