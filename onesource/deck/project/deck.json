@@ -1,0 +1,17 @@
+{
+  "v": 4,
+  "createdOnFiles": {"v": 1, "at": "2026-11-09T05:30:00Z"},
+  "lists": "css",
+  "title": "OneSource 중간 산출물",
+  "order": ["cover", "summary", "flow", "scr01", "scr02", "scr03", "scr04", "scr05", "scr06", "scr07", "scr08"],
+  "sections": {
+    "s1": {"description": "표지: 프로토타입 링크, 서비스 설명, 사용 방법, 추후 계획", "start": "cover"},
+    "s2": {"description": "이 개발의 기반이 된 사용자 문서 요약", "start": "summary"},
+    "s3": {"description": "화면설계서: 화면 흐름과 화면별 구성 요소", "start": "flow"}
+  },
+  "faces": {
+    "ibm-plex-sans-kr": {"family": "IBM Plex Sans KR", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"},
+    "ibm-plex-mono": {"family": "IBM Plex Mono", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"}
+  },
+  "designSystems": []
+}
